@@ -1,0 +1,37 @@
+version: 1
+
+sources:
+  public_ats:
+    enabled: true
+    authentication: none
+    rate_limit_per_minute: 30
+  govuk_find_a_job:
+    enabled: true
+    authentication: none
+    rate_limit_per_minute: 10
+  reed:
+    enabled: true
+    authentication: api_key_later
+    rate_limit_per_minute: 10
+  adzuna:
+    enabled: true
+    authentication: api_key_later
+    rate_limit_per_minute: 10
+  remote_feeds:
+    enabled: true
+    authentication: none
+    rate_limit_per_minute: 10
+  guest_aggregators:
+    enabled: false
+    authentication: none
+    rate_limit_per_minute: 5
+
+policy:
+  jitter_seconds:
+    minimum: 2
+    maximum: 15
+  retries: 2
+  backoff_on_block: true
+  never_authenticate_to:
+    - linkedin
+    - indeed

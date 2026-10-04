@@ -1,0 +1,73 @@
+# Safe example only. Replace values in a local, ignored configuration file.
+version: 1
+
+profiles:
+  full_time:
+    enabled: true
+    employment_types:
+      - full_time
+    keywords:
+      include: []
+      exclude: []
+    locations:
+      include: []
+      radius_miles: null
+    remote:
+      modes:
+        - uk_remote
+        - hybrid
+        - onsite
+      allowed_countries:
+        - GB
+      worldwide: false
+    salary:
+      minimum_gbp: null
+    score_threshold: 70
+    schedule:
+      start: "06:00"
+      end: "20:00"
+
+  part_time:
+    enabled: true
+    employment_types:
+      - part_time
+    keywords:
+      include: []
+      exclude: []
+    locations:
+      include: []
+      radius_miles: null
+    remote:
+      modes:
+        - uk_remote
+        - hybrid
+        - onsite
+      allowed_countries:
+        - GB
+      worldwide: false
+    salary:
+      minimum_gbp: null
+    score_threshold: 60
+    schedule:
+      start: "20:00"
+      end: "08:00"
+
+  exploratory:
+    enabled: false
+    employment_types: []
+    keywords:
+      include: []
+      exclude: []
+    locations:
+      include: []
+      radius_miles: null
+    remote:
+      modes: []
+      allowed_countries: []
+      worldwide: false
+    salary:
+      minimum_gbp: null
+    score_threshold: 80
+    schedule:
+      start: "00:00"
+      end: "00:00"

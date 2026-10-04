@@ -1,0 +1,4 @@
+version: 1
+
+# Add public repository URLs explicitly. Do not add private repositories or tokens here.
+repositories: []

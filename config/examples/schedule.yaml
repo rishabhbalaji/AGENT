@@ -1,0 +1,32 @@
+version: 1
+timezone: Europe/London
+
+windows:
+  full_time:
+    start: "06:00"
+    end: "20:00"
+    allow:
+      - discovery
+      - scoring
+      - drafting
+      - approved_external_applications
+  part_time:
+    start: "20:00"
+    end: "08:00"
+    allow:
+      - discovery
+      - scoring
+      - drafting
+  maintenance:
+    start: "00:00"
+    end: "06:00"
+    allow:
+      - maintenance
+      - status_ingestion
+      - agent_corner
+
+pause:
+  discovery: queue
+  inference: stop
+  tailoring: stop
+  applications: stop

@@ -1,0 +1,36 @@
+version: 1
+
+storage:
+  require_sda_device: true
+  data_root: /mnt/sda/job-engine
+  refuse_read_only: true
+
+discovery:
+  suitable_jobs_target_per_day: 15
+  submissions_are_not_a_quota: true
+
+clearance:
+  exclude_required_or_requested:
+    - SC
+    - SC Clearance
+    - Security Check
+
+company_exclusions: []
+
+applications:
+  default_mode: approval_required
+  autonomous_mode_requires_allowlist: true
+  first_live_provider: greenhouse
+  allowed_providers: []
+  park_on:
+    - captcha
+    - mfa
+    - unexpected_page
+    - changed_form
+    - ambiguous_question
+    - unsupported_account_creation
+
+retention:
+  application_evidence: indefinite
+  raw_job_snapshots: 365d
+  redundant_caches: configurable
