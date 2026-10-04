@@ -1,0 +1,55 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Runtime state and local databases
+data/
+runtime/
+storage/
+artifacts/
+logs/
+*.db
+*.sqlite
+*.sqlite3
+
+# Personal source material and generated application artifacts
+*.pdf
+*.csv
+!fixtures/**/*.csv
+
+# Mail, browser, and credential state
+mail/
+email/
+browser-data/
+playwright/.auth/
+credentials/
+secrets/
+
+# Local model and vector-store caches
+models/
+model-cache/
+embeddings/
+qdrant_storage/
+
+# Python tooling
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.py[cod]
+
+# Node tooling, if used by the dashboard
+node_modules/
+dist/
+coverage/
+
+# Editor and OS files
+.vscode/settings.json
+.idea/
+.DS_Store
