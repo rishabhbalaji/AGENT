@@ -98,5 +98,5 @@ credentials; neither is committed to Git.
 - The application must later verify that its configured data root is on the
   expected SDA filesystem.
 - A missing, read-only, or incorrectly mounted data root must fail closed.
-- This stage documents the contract only. It does not change `/etc/fstab`,
-  create mounts, or modify host storage.
+- Host prerequisite checks are separate from storage checks and must be
+  non-mutating.
