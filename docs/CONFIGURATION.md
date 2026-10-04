@@ -26,6 +26,10 @@ The example files under `config/examples/` are templates for that local
 configuration. They do not enable live application submission, contain no
 personal data, and contain no credentials.
 
+The loader is available as `job_engine.config.load_config(path)`. It requires
+all five YAML files, validates their version and required structures, and raises
+an explicit configuration error before workers can start.
+
 ## Environment values
 
 Copy `.env.example` to a local `.env` only when the application supports
