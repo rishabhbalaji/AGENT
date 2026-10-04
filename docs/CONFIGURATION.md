@@ -43,6 +43,11 @@ Required values will eventually include:
 The GitHub token, mail credentials, and vault credentials are intentionally
 not configured in this stage.
 
+See [SDA_STORAGE.md](./SDA_STORAGE.md) for the host-level UUID and mount
+contract. The repository examples use `/mnt/sda/job-engine` as a placeholder;
+replace it only in local configuration after confirming the actual mount on
+`rbkasus`.
+
 ## Configuration safety rules
 
 1. Configuration must fail validation before workers start.
