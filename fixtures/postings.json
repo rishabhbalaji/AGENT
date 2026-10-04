@@ -1,0 +1,53 @@
+[
+  {
+    "version": 1,
+    "job_id": "fixture-greenhouse-python",
+    "title": "Junior Python Automation Developer",
+    "company": "Northstar Systems",
+    "location": "Manchester, GB",
+    "employment_type": "full_time",
+    "remote_mode": "hybrid",
+    "source": "greenhouse_fixture",
+    "source_url": "https://example.invalid/jobs/fixture-greenhouse-python",
+    "description": "Build tested Python automation and maintain internal documentation.",
+    "requirements": [
+      "Python",
+      "technical documentation"
+    ],
+    "clearance_requirements": []
+  },
+  {
+    "version": 1,
+    "job_id": "fixture-public-sector-sc",
+    "title": "Python Developer",
+    "company": "Civic Example Ltd",
+    "location": "Leeds, GB",
+    "employment_type": "full_time",
+    "remote_mode": "hybrid",
+    "source": "public_ats_fixture",
+    "source_url": "https://example.invalid/jobs/fixture-public-sector-sc",
+    "description": "Maintain Python services for a public-sector programme.",
+    "requirements": [
+      "Python"
+    ],
+    "clearance_requirements": [
+      "SC Clearance"
+    ]
+  },
+  {
+    "version": 1,
+    "job_id": "fixture-part-time-sqlite",
+    "title": "Part-time Data Operations Assistant",
+    "company": "Fictional Data Co",
+    "location": "Remote, GB",
+    "employment_type": "part_time",
+    "remote_mode": "uk_remote",
+    "source": "remote_feed_fixture",
+    "source_url": "https://example.invalid/jobs/fixture-part-time-sqlite",
+    "description": "Maintain data quality checks and simple SQLite reports.",
+    "requirements": [
+      "SQLite"
+    ],
+    "clearance_requirements": []
+  }
+]

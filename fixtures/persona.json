@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "persona_id": "fictional-alex-river",
+  "name": "Alex River",
+  "location": "Manchester, GB",
+  "employment_preferences": [
+    "full_time",
+    "part_time"
+  ],
+  "clearances_held": [],
+  "skills": [
+    "Python",
+    "SQLite",
+    "technical documentation"
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-python-tooling",
+      "claim": "Built small Python automation tools with tests.",
+      "source": "fictional-resume"
+    },
+    {
+      "evidence_id": "ev-sqlite-tracking",
+      "claim": "Designed a local SQLite tracking database.",
+      "source": "fictional-resume"
+    }
+  ]
+}

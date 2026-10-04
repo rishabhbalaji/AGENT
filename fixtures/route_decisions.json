@@ -1,0 +1,35 @@
+[
+  {
+    "version": 1,
+    "job_id": "fixture-greenhouse-python",
+    "route": "draft_for_approval",
+    "decision": "shortlist",
+    "reason_codes": [
+      "profile_match",
+      "evidence_available",
+      "public_ats"
+    ],
+    "requires_human_approval": true
+  },
+  {
+    "version": 1,
+    "job_id": "fixture-public-sector-sc",
+    "route": "park",
+    "decision": "exclude",
+    "reason_codes": [
+      "excluded_clearance"
+    ],
+    "requires_human_approval": false
+  },
+  {
+    "version": 1,
+    "job_id": "fixture-part-time-sqlite",
+    "route": "draft_for_approval",
+    "decision": "shortlist",
+    "reason_codes": [
+      "profile_match",
+      "part_time_profile"
+    ],
+    "requires_human_approval": true
+  }
+]

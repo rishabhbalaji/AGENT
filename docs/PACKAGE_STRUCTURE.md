@@ -9,6 +9,7 @@ src/job_engine/
 ├── cli.py
 ├── config.py
 ├── database.py
+├── fixtures.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -36,6 +37,10 @@ safe to call repeatedly.
 The dry-run `job-engine health` command is provided by `job_engine.health`. It
 loads and validates configuration, checks the SDA-backed data root, resolves
 the current operating mode, and records one local health event.
+
+Offline fictional development data is loaded and validated by
+`job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
+`docs/FIXTURES.md`.
 
 For development without installing the package, run tests with:
 
