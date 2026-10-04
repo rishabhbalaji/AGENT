@@ -8,7 +8,9 @@ src/job_engine/
 ├── __init__.py
 ├── cli.py
 ├── config.py
-└── logging.py
+├── database.py
+├── logging.py
+└── modes.py
 ```
 
 The package currently uses only the Python standard library. The console entry
@@ -18,13 +20,17 @@ point is:
 job-engine --version
 ```
 
-Configuration loading, storage initialization, scheduling, workers, and the
+Configuration loading, storage validation, scheduling, workers, and the
 browser interface are intentionally deferred to later stages.
 
 Operating-mode resolution is provided by `job_engine.modes.resolve_mode`.
 It uses `Europe/London` schedule time, supports midnight-spanning windows,
 unions actions from overlapping windows, and fails closed for invalid schedule
 values.
+
+SQLite initialization is provided by `job_engine.database.migrate`. It creates
+the initial jobs, applications, events, and migration-tracking tables and is
+safe to call repeatedly.
 
 For development without installing the package, run tests with:
 
