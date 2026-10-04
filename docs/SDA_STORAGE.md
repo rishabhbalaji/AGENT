@@ -57,6 +57,20 @@ The `SOURCE` shown by `findmnt` must resolve to the confirmed SDA filesystem.
 If validation fails, stop and correct the host configuration rather than
 starting the engine.
 
+## Application safety check
+
+The reusable check in `scripts/storage_check.py` validates a configured data
+root before the engine starts:
+
+```bash
+python3 scripts/storage_check.py /mnt/sda/job-engine
+```
+
+It fails closed when the directory is missing, not writable, read-only, not
+mounted, or mounted on a source other than SDA. It uses `findmnt` to inspect
+the actual mount and creates only a temporary file in the data root to verify
+write access. The temporary file is removed immediately.
+
 ## Engine data layout
 
 Once the mount is confirmed, create the application data root below it:
