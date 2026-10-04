@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+*.secret
+*.secrets
 *.pem
 *.key
 *.p12
@@ -12,11 +14,27 @@ runtime/
 storage/
 artifacts/
 logs/
+cache/
+tmp/
+temp/
 *.db
 *.sqlite
 *.sqlite3
+*.log
 
 # Personal source material and generated application artifacts
+personal/
+private/
+profiles.local.yaml
+schedule.local.yaml
+sources.local.yaml
+repositories.local.yaml
+policy.local.yaml
+resume*
+cover-letter*
+cover_letter*
+application-history*
+job-posting*
 *.pdf
 *.csv
 !fixtures/**/*.csv
@@ -25,15 +43,20 @@ logs/
 mail/
 email/
 browser-data/
+browser/
 playwright/.auth/
+playwright/.cache/
 credentials/
 secrets/
+vault/
 
 # Local model and vector-store caches
 models/
 model-cache/
 embeddings/
 qdrant_storage/
+chroma/
+chromadb/
 
 # Python tooling
 .venv/
