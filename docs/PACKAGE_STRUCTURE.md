@@ -19,6 +19,8 @@ src/job_engine/
 ├── evidence.py
 ├── claims.py
 ├── triage.py
+├── model_output.py
+├── documents.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -85,6 +87,14 @@ accepted.
 
 `job_engine.triage.triage_posting` extracts structured review fields and maps
 existing deterministic match decisions to non-submitting review routes.
+
+`job_engine.model_output` validates closed JSON schemas and preserves model
+prompt, version, revision, and timestamp provenance for future model-assisted
+features.
+
+`job_engine.documents.generate_tailored_documents` creates local,
+evidence-backed text drafts for resumes, cover letters, ATS answers, and
+LinkedIn messages without submitting anything.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
