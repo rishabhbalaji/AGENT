@@ -7,7 +7,7 @@ from unittest import TestCase
 
 from job_engine.ats import NormalizedPosting, SourceFetchResult, SourceHealth, SourceHealthStatus
 from job_engine.config import Configuration
-from job_engine.discovery import discover
+from job_engine.discovery import discover, discover_sources
 
 
 class Adapter:
@@ -59,6 +59,17 @@ def configuration():
 
 
 class DiscoveryTests(TestCase):
+    def test_multiple_sources_are_combined_and_deduplicated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = discover_sources(
+                (Adapter(), Adapter()),
+                configuration(),
+                database_path=Path(directory) / "engine.sqlite3",
+            )
+            self.assertEqual(len(report.reports), 2)
+            self.assertEqual(len(report.jobs), 1)
+            self.assertFalse(report.persisted)
+
     def test_dry_run_does_not_create_database(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "engine.sqlite3"

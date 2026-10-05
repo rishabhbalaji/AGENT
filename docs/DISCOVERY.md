@@ -24,3 +24,8 @@ job-engine discover \
 Add `--persist` only after reviewing the dry-run JSON. Repeat `--board` for
 additional explicitly allowlisted public boards. Board slugs are not guessed
 by the engine.
+
+The orchestration layer also supports multiple source adapters in one pass.
+Sources are evaluated sequentially, a failed source does not stop the others,
+and stable duplicate postings are retained once. Source health remains
+available per adapter for later scheduling and monitoring.

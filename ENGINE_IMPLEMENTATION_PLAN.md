@@ -265,6 +265,7 @@ Every stage must provide:
 **M4P3 — Live discovery**
 
 - **M4P3S0 — Add discovery runner** (`M4P3S0-add-discovery-runner`): fetch a configured public source, apply deterministic matching, and support dry-run or SQLite persistence.
+- **M4P3S1 — Add multi-source discovery** (`M4P3S1-multi-source-discovery`): run public adapters sequentially, preserve per-source health, and deduplicate the combined result.
 
 #### Milestone 5 — Operations, status tracking, and isolation
 

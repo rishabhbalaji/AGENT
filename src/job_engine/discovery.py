@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
+from collections.abc import Iterable
 import json
 import sqlite3
 from pathlib import Path
@@ -36,6 +37,15 @@ class DiscoveryReport:
     source: str
     health_status: str
     records_seen: int
+    jobs: tuple[DiscoveredJob, ...]
+    persisted: bool
+
+
+@dataclass(frozen=True)
+class MultiDiscoveryReport:
+    """Combined result for one sequential pass across public sources."""
+
+    reports: tuple[DiscoveryReport, ...]
     jobs: tuple[DiscoveredJob, ...]
     persisted: bool
 
@@ -175,5 +185,37 @@ def discover(
         health_status=result.health.status.value,
         records_seen=result.health.records_seen,
         jobs=discovered,
+        persisted=not dry_run,
+    )
+
+
+def discover_sources(
+    adapters: Iterable[SourceAdapter],
+    configuration: Configuration,
+    *,
+    database_path: Path | None = None,
+    dry_run: bool = True,
+) -> MultiDiscoveryReport:
+    """Run every adapter sequentially and deduplicate stable postings.
+
+    A source's failure is represented by its own unavailable health report;
+    it does not prevent other public sources from being evaluated.
+    """
+    reports: list[DiscoveryReport] = []
+    by_id: dict[str, DiscoveredJob] = {}
+    for adapter in adapters:
+        report = discover(
+            adapter,
+            configuration,
+            database_path=None if dry_run else database_path,
+            dry_run=dry_run,
+        )
+        reports.append(report)
+        for job in report.jobs:
+            by_id.setdefault(job.stable_id, job)
+    jobs = tuple(by_id.values())
+    return MultiDiscoveryReport(
+        reports=tuple(reports),
+        jobs=jobs,
         persisted=not dry_run,
     )
