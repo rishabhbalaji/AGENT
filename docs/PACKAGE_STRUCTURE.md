@@ -18,6 +18,7 @@ src/job_engine/
 ├── github_index.py
 ├── evidence.py
 ├── claims.py
+├── triage.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -81,6 +82,9 @@ revision/hash information, and a content hash.
 `job_engine.claims.validate_claims` rejects generated claims without evidence
 references or with unknown/repeated chunk IDs before application material is
 accepted.
+
+`job_engine.triage.triage_posting` extracts structured review fields and maps
+existing deterministic match decisions to non-submitting review routes.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
