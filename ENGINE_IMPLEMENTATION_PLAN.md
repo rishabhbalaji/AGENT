@@ -254,6 +254,10 @@ Every stage must provide:
 - **M4P1S3 — Park unsafe workflows** (`M4P1S3-park-unsafe-workflows`): park CAPTCHAs, MFA, changed forms, unexpected pages, ambiguous questions, and unsupported account creation.
 - **M4P1S4 — Evaluate Vaultwarden integration** (`M4P1S4-evaluate-vaultwarden-integration`): prepare a future SDA/Tailscale Vaultwarden adapter without storing secrets in code or job records.
 
+**M4P2 — Local model integration**
+
+- **M4P2S0 — Add Ollama connectivity** (`M4P2S0-add-ollama-connectivity`): verify a Tailscale endpoint and exact configured model, and expose fail-closed structured JSON transport without changing deterministic policy decisions.
+
 #### Milestone 5 — Operations, status tracking, and isolation
 
 **M5P0 — Daily operations**

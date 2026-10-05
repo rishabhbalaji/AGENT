@@ -14,6 +14,7 @@ from .database import DatabaseError
 from .dashboard import DashboardBindingError, validate_bind_host
 from .health import run_health_from_strings
 from .logging import configure_logging
+from .ollama import OllamaClient, OllamaConfig, OllamaError
 from .storage_check import StorageCheckError
 from .fixtures import FixtureError, seed_fixture_database
 
@@ -63,6 +64,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     demo.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
     demo.add_argument("--fixtures-dir", type=Path, default=Path("fixtures"))
+    ollama = subparsers.add_parser(
+        "ollama-health",
+        help="verify the configured Ollama endpoint and exact model",
+    )
+    ollama.add_argument("--endpoint", required=True)
+    ollama.add_argument("--model", required=True)
+    ollama.add_argument("--timeout", type=float, default=10.0)
     return parser
 
 
@@ -111,6 +119,30 @@ def main(argv: Sequence[str] | None = None) -> int:
         except ImportError as exc:
             print(f"dashboard failed: missing dependency: {exc}", file=sys.stderr)
             return 1
+    elif args.command == "ollama-health":
+        try:
+            health = OllamaClient(
+                OllamaConfig(
+                    base_url=args.endpoint,
+                    model=args.model,
+                    timeout_seconds=args.timeout,
+                )
+            ).check_health()
+        except (OllamaError, ValueError) as exc:
+            print(f"ollama health failed: {exc}", file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "endpoint": health.endpoint,
+                    "model": health.model.name,
+                    "digest": health.model.digest,
+                    "modified_at": health.model.modified_at,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
     return 0
 
 
