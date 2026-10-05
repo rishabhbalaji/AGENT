@@ -259,6 +259,7 @@ Every stage must provide:
 - **M4P2S0 — Add Ollama connectivity** (`M4P2S0-add-ollama-connectivity`): verify a Tailscale endpoint and exact configured model, and expose fail-closed structured JSON transport without changing deterministic policy decisions.
 - **M4P2S1 — Benchmark Ollama models** (`M4P2S1-benchmark-ollama-models`): evaluate installed models against fixed fictional postings before selecting triage or tailoring models.
 - **M4P2S2 — Add fixture model triage** (`M4P2S2-add-fixture-model-triage`): compare validated model observations with deterministic triage while keeping policy routes authoritative.
+- **M4P2S3 — Add fixture model drafting** (`M4P2S3-add-fixture-model-drafting`): require model-generated claims to resolve against local evidence before creating local drafts.
 
 #### Milestone 5 — Operations, status tracking, and isolation
 
