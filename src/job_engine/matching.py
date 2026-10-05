@@ -5,11 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 from typing import Any
+from urllib.parse import urlparse
 
 from .ats import NormalizedPosting
 
 
 DEFAULT_CLEARANCE_EXCLUSIONS = ("SC", "SC Clearance", "Security Check")
+DEFAULT_COMPANY_EXCLUSIONS: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -73,6 +75,35 @@ def _clearance_matches(
     return tuple(matches)
 
 
+def _company_matches(
+    posting: NormalizedPosting,
+    exclusions: tuple[dict[str, Any], ...],
+) -> tuple[str, ...]:
+    """Return reasons for configured company-name or company-domain matches."""
+    company = " ".join(posting.company.casefold().split())
+    hostname = (urlparse(posting.source_url).hostname or "").casefold().removeprefix("www.")
+    matches: list[str] = []
+    for exclusion in exclusions:
+        if not isinstance(exclusion, dict):
+            continue
+        names = [exclusion.get("name"), *exclusion.get("aliases", [])]
+        normalized_names = {
+            " ".join(value.casefold().split())
+            for value in names
+            if isinstance(value, str) and value.strip()
+        }
+        domains = {
+            value.casefold().removeprefix("www.").strip()
+            for value in exclusion.get("domains", [])
+            if isinstance(value, str) and value.strip()
+        }
+        if company in normalized_names or hostname in domains:
+            reason = exclusion.get("reason")
+            label = reason.strip() if isinstance(reason, str) and reason.strip() else "configured exclusion"
+            matches.append(label)
+    return tuple(matches)
+
+
 def _salary(posting: NormalizedPosting) -> float | None:
     value = posting.metadata.get("salary_gbp")
     try:
@@ -87,6 +118,7 @@ def match_profile(
     profile: dict[str, Any],
     *,
     clearance_exclusions: tuple[str, ...] = DEFAULT_CLEARANCE_EXCLUSIONS,
+    company_exclusions: tuple[dict[str, Any], ...] = DEFAULT_COMPANY_EXCLUSIONS,
 ) -> MatchDecision:
     """Score one posting against one validated profile configuration."""
     if not profile.get("enabled", False):
@@ -102,6 +134,18 @@ def match_profile(
             False,
             True,
             (f"clearance_exclusion:{','.join(clearance_matches)}",),
+            (),
+        )
+
+    company_matches = _company_matches(posting, company_exclusions)
+    if company_matches:
+        return MatchDecision(
+            profile_name,
+            0,
+            threshold,
+            False,
+            True,
+            (f"company_exclusion:{'|'.join(company_matches)}",),
             (),
         )
 
@@ -205,6 +249,7 @@ def match_enabled_profiles(
     profiles: dict[str, dict[str, Any]],
     *,
     clearance_exclusions: tuple[str, ...] = DEFAULT_CLEARANCE_EXCLUSIONS,
+    company_exclusions: tuple[dict[str, Any], ...] = DEFAULT_COMPANY_EXCLUSIONS,
 ) -> tuple[MatchDecision, ...]:
     """Evaluate a posting against all configured profiles in stable order."""
     return tuple(
@@ -213,6 +258,7 @@ def match_enabled_profiles(
             name,
             profiles[name],
             clearance_exclusions=clearance_exclusions,
+            company_exclusions=company_exclusions,
         )
         for name in sorted(profiles)
         if profiles[name].get("enabled", False)

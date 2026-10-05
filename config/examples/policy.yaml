@@ -16,6 +16,11 @@ clearance:
     - Security Check
 
 company_exclusions: []
+  # Add exact company names, aliases, domains, and a human-readable reason.
+  # - name: Example Holdings
+  #   aliases: [Example Ltd]
+  #   domains: [example.com]
+  #   reason: Existing application conflict
 
 applications:
   default_mode: approval_required

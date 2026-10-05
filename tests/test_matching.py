@@ -87,6 +87,41 @@ class MatchingTests(unittest.TestCase):
         self.assertTrue(decision.excluded)
         self.assertIn("clearance_exclusion:dv", decision.reasons)
 
+    def test_company_name_alias_and_domain_exclusions_are_applied_before_scoring(self):
+        exclusions = (
+            {
+                "name": "Blocked Holdings",
+                "aliases": ["Blocked Ltd"],
+                "domains": ["blocked.example"],
+                "reason": "Existing application conflict",
+            },
+        )
+        alias_decision = match_profile(
+            posting(company="Blocked Ltd"),
+            "full_time",
+            PROFILE,
+            company_exclusions=exclusions,
+        )
+        domain_decision = match_profile(
+            posting(
+                company="Other Company",
+                source_url="https://www.blocked.example/jobs/1",
+            ),
+            "full_time",
+            PROFILE,
+            company_exclusions=exclusions,
+        )
+        self.assertTrue(alias_decision.excluded)
+        self.assertEqual(
+            alias_decision.reasons,
+            ("company_exclusion:Existing application conflict",),
+        )
+        self.assertTrue(domain_decision.excluded)
+
+    def test_unconfigured_company_is_not_excluded(self):
+        decision = match_profile(posting(), "full_time", PROFILE)
+        self.assertFalse(decision.excluded)
+
     def test_missing_optional_values_are_unknown(self):
         decision = match_profile(
             posting(location=None, remote_mode=None, metadata={}),

@@ -130,12 +130,24 @@ def _validate_policy(document: dict[str, Any]) -> None:
     clearance = _require_mapping(document, "clearance", "policy.yaml")
     applications = _require_mapping(document, "applications", "policy.yaml")
     _require_mapping(document, "retention", "policy.yaml")
+    company_exclusions = _require_list(document, "company_exclusions", "policy.yaml")
     if storage.get("require_sda_device") is not True:
         raise ConfigurationError("policy.yaml: SDA storage must be required")
     if discovery.get("suitable_jobs_target_per_day") != 15:
         raise ConfigurationError("policy.yaml: suitable jobs target must be 15")
     if not _require_list(clearance, "exclude_required_or_requested", "policy.yaml"):
         raise ConfigurationError("policy.yaml: clearance exclusions cannot be empty")
+    for exclusion in company_exclusions:
+        if not isinstance(exclusion, dict):
+            raise ConfigurationError("policy.yaml: company exclusions must be mappings")
+        if not isinstance(exclusion.get("name"), str) or not exclusion["name"].strip():
+            raise ConfigurationError("policy.yaml: company exclusion names must be non-empty")
+        if not isinstance(exclusion.get("aliases", []), list):
+            raise ConfigurationError("policy.yaml: company exclusion aliases must be a list")
+        if not isinstance(exclusion.get("domains", []), list):
+            raise ConfigurationError("policy.yaml: company exclusion domains must be a list")
+        if not isinstance(exclusion.get("reason"), str) or not exclusion["reason"].strip():
+            raise ConfigurationError("policy.yaml: company exclusion reasons must be non-empty")
     if applications.get("default_mode") != "approval_required":
         raise ConfigurationError("policy.yaml: default application mode must require approval")
 
