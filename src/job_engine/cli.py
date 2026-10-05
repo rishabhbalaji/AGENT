@@ -20,6 +20,7 @@ from .storage_check import StorageCheckError
 from .fixtures import FixtureError, seed_fixture_database
 from .discovery import discover
 from .greenhouse import GreenhouseAdapter
+from .worker import run_discovery_worker
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -95,6 +96,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="write results to SQLite; without this flag the command is a dry run",
     )
+    worker = subparsers.add_parser(
+        "discover-worker",
+        help="run one persistent, lock-protected public discovery pass",
+    )
+    worker.add_argument("--config-dir", type=Path, default=Path("config/local"))
+    worker.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
+    worker.add_argument("--board", action="append", required=True)
+    worker.add_argument("--timeout", type=float, default=20.0)
+    worker.add_argument("--lock-file", type=Path, default=Path("engine.discovery.lock"))
+    worker.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
     return parser
 
 
@@ -217,6 +228,42 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(reports, indent=2, sort_keys=True))
         except (ConfigurationError, DatabaseError, ValueError, OSError) as exc:
             print(f"discovery failed: {exc}", file=sys.stderr)
+            return 1
+    elif args.command == "discover-worker":
+        try:
+            configuration = load_config(args.config_dir)
+            adapters = tuple(
+                GreenhouseAdapter(
+                    board,
+                    source_name=f"greenhouse:{board}",
+                    timeout=args.timeout,
+                )
+                for board in args.board
+            )
+            result = run_discovery_worker(
+                adapters,
+                configuration,
+                database_path=args.database,
+                lock_path=args.lock_file,
+                pause_path=args.pause_file,
+            )
+            if result.status != "completed":
+                print(json.dumps({"status": result.status}, sort_keys=True))
+                return 0
+            report = result.value
+            print(
+                json.dumps(
+                    {
+                        "status": "completed",
+                        "sources": len(report.reports),
+                        "jobs": len(report.jobs),
+                        "persisted": report.persisted,
+                    },
+                    sort_keys=True,
+                )
+            )
+        except (ConfigurationError, DatabaseError, ValueError, OSError) as exc:
+            print(f"discovery worker failed: {exc}", file=sys.stderr)
             return 1
     return 0
 

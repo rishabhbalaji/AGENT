@@ -1,0 +1,14 @@
+[Unit]
+Description=Job Engine public discovery pass
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/AGENT
+ExecStart=%h/projects/AGENT/.venv/bin/job-engine discover-worker --config-dir %h/projects/AGENT/config/local --database %h/projects/AGENT/engine.sqlite3 --board gitlab --lock-file %h/projects/AGENT/engine.discovery.lock --pause-file %h/projects/AGENT/PAUSED
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/projects/AGENT
