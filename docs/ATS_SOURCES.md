@@ -34,3 +34,15 @@ allowlist and inject a public transport. The adapter sends no credentials,
 cookies, or browser state. It reports `DISABLED` when policy prevents access
 and `UNAVAILABLE` when an approved transport fails. No real aggregator is
 selected by this stage; the fixture uses `example.invalid`.
+## Offline application-form fixtures
+
+Before using any live ATS page, form behavior is tested against local fixtures.
+The first fixture is
+`fixtures/greenhouse_application_form.json`, which models a small Greenhouse
+form using only an `example.invalid` URL.
+
+`job_engine.ats_fixtures.load_form_fixture` validates supported field types,
+required fields, select options, unique field names, and fixture-only URLs.
+`ATSFormFixture.validate_answers` validates a prepared answer set locally.
+Fixtures explicitly default to `supports_submission: false`; this stage does
+not open a browser, authenticate, upload a resume, or submit an application.

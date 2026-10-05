@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "provider": "greenhouse",
+  "job_id": "fixture-greenhouse-python",
+  "application_url": "https://example.invalid/apply/fixture-greenhouse-python",
+  "supports_submission": false,
+  "fields": [
+    {
+      "name": "name",
+      "label": "Full name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "email",
+      "label": "Email",
+      "type": "email",
+      "required": true
+    },
+    {
+      "name": "resume",
+      "label": "Resume",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "cover_letter",
+      "label": "Cover letter",
+      "type": "textarea",
+      "required": false
+    },
+    {
+      "name": "work_authorisation",
+      "label": "Right to work",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Yes",
+        "No",
+        "Requires sponsorship"
+      ]
+    }
+  ]
+}
