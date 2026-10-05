@@ -16,6 +16,7 @@ src/job_engine/
 ├── matching.py
 ├── resume.py
 ├── github_index.py
+├── evidence.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -71,6 +72,10 @@ ignored by Git and are not copied into the repository.
 `job_engine.github_index.GitHubRepositoryIndexer` inventories only explicitly
 allowlisted public GitHub repositories using read-only API requests. It stores
 file metadata, not repository clones or credentials.
+
+`job_engine.evidence` creates stable, traceable chunks from the local resume
+and indexed public repository text files. Each chunk retains source identity,
+revision/hash information, and a content hash.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
