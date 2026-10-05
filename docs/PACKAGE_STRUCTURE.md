@@ -47,6 +47,8 @@ scheduling metadata.
 
 `job_engine.greenhouse.GreenhouseAdapter` is the first concrete adapter. It
 fetches public Greenhouse board listings and reports explicit source health.
+`job_engine.public_feed.GovUkFindAJobAdapter` adds the first configurable
+public-feed integration without embedding credentials or undocumented URLs.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in

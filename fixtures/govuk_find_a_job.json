@@ -1,0 +1,19 @@
+{
+  "jobs": [
+    {
+      "id": "govuk-fixture-001",
+      "title": "Python Support Developer",
+      "company": "Civic Example Ltd",
+      "url": "https://example.invalid/findajob/govuk-fixture-001",
+      "description": "Support Python services and maintain clear technical records.",
+      "location": "Leeds, GB",
+      "employment_type": "full_time",
+      "remote_mode": "hybrid",
+      "posted_at": "2026-01-20T09:00:00Z",
+      "requirements": [
+        "Python"
+      ],
+      "clearance_requirements": []
+    }
+  ]
+}
