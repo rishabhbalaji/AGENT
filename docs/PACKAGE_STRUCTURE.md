@@ -23,6 +23,7 @@ src/job_engine/
 ├── documents.py
 ├── document_gates.py
 ├── dashboard.py
+├── storage_check.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -104,6 +105,10 @@ queue items without mutating the drafts.
 
 `job_engine.dashboard.create_dashboard_app` provides the first local,
 server-rendered review queue interface. It is loopback-only in this stage.
+
+`job_engine.storage_check` contains the installed-package storage validation
+used by the CLI and health checks; the legacy `scripts/storage_check.py` module
+remains available for direct script and test compatibility.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in

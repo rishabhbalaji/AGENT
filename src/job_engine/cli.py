@@ -14,7 +14,7 @@ from .database import DatabaseError
 from .dashboard import DashboardBindingError, validate_bind_host
 from .health import run_health_from_strings
 from .logging import configure_logging
-from scripts.storage_check import StorageCheckError
+from .storage_check import StorageCheckError
 
 
 def build_parser() -> argparse.ArgumentParser:

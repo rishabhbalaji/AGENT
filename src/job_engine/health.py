@@ -8,11 +8,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from scripts.storage_check import MountInfo, validate_storage
-
 from .config import Configuration, load_config
 from .database import record_event
 from .modes import ModeState, resolve_mode
+from .storage_check import MountInfo, validate_storage
 
 
 StorageValidator = Callable[[Path], MountInfo]
