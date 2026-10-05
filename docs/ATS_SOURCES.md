@@ -27,3 +27,10 @@ at an undocumented or changing endpoint. It accepts a normalized JSON feed
 shape, preserves the source URL, and uses the same explicit health behavior.
 Reed and Adzuna remain configuration- and credential-gated until their API
 credentials and terms are deliberately enabled.
+
+`job_engine.aggregator.GuestAggregatorAdapter` is disabled by default. To
+enable a guest feed, an operator must explicitly provide its host in an
+allowlist and inject a public transport. The adapter sends no credentials,
+cookies, or browser state. It reports `DISABLED` when policy prevents access
+and `UNAVAILABLE` when an approved transport fails. No real aggregator is
+selected by this stage; the fixture uses `example.invalid`.

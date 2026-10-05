@@ -25,6 +25,7 @@ sources:
     enabled: false
     authentication: none
     rate_limit_per_minute: 5
+    allowed_hosts: []
 
 policy:
   jitter_seconds:

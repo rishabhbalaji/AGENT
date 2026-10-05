@@ -9,6 +9,7 @@ src/job_engine/
 ├── cli.py
 ├── config.py
 ├── ats.py
+├── aggregator.py
 ├── database.py
 ├── fixtures.py
 ├── greenhouse.py
@@ -49,6 +50,8 @@ scheduling metadata.
 fetches public Greenhouse board listings and reports explicit source health.
 `job_engine.public_feed.GovUkFindAJobAdapter` adds the first configurable
 public-feed integration without embedding credentials or undocumented URLs.
+`job_engine.aggregator.GuestAggregatorAdapter` is a disabled-by-default,
+allowlist-gated contract for any future guest/public aggregator.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in

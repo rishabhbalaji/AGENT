@@ -1,0 +1,12 @@
+{
+  "jobs": [
+    {
+      "id": "guest-fixture-001",
+      "title": "Fictional Remote Python Role",
+      "company": "Example Guest Feed",
+      "url": "https://example.invalid/jobs/guest-fixture-001",
+      "description": "Synthetic guest-feed posting for contract tests.",
+      "location": "Remote, GB"
+    }
+  ]
+}
