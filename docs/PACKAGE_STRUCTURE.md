@@ -106,6 +106,9 @@ queue items without mutating the drafts.
 `job_engine.dashboard.create_dashboard_app` provides the local, server-rendered
 review queue interface. `queues_from_database` reads persisted SQLite jobs
 into the queues without mutating or submitting anything.
+The dashboard's explicit review actions are implemented by
+`job_engine.database.update_job_status` and `update_job_text`; they record
+local events and never perform external application submission.
 
 `job_engine.storage_check` contains the installed-package storage validation
 used by the CLI and health checks; the legacy `scripts/storage_check.py` module

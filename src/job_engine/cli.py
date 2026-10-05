@@ -84,7 +84,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             host = validate_bind_host(args.host)
             print(f"Dashboard available at http://{host}:{args.port}", flush=True)
             uvicorn.run(
-                create_dashboard_app(queues_from_database(args.database)),
+                create_dashboard_app(
+                    queues_from_database(args.database),
+                    database_path=args.database,
+                ),
                 host=host,
                 port=args.port,
             )

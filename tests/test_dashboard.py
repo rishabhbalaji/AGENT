@@ -43,6 +43,50 @@ class DashboardTests(unittest.TestCase):
         response = self.client.get("/queue/unknown")
         self.assertEqual(response.status_code, 404)
 
+    def test_review_action_updates_job_and_records_event(self):
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "engine.sqlite3"
+            migrate(database)
+            with sqlite3.connect(database) as connection:
+                connection.execute(
+                    """
+                    INSERT INTO jobs(
+                        id, title, company, source, source_url,
+                        first_seen_at, last_seen_at, status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    ("job-1", "Role", "Example", "fixture", "https://example.invalid",
+                     "2026-01-01", "2026-01-01", "drafted"),
+                )
+            client = TestClient(
+                create_dashboard_app(
+                    queues_from_database(database),
+                    database_path=database,
+                )
+            )
+            response = client.post("/job/job-1/action/approve", follow_redirects=False)
+            self.assertEqual(response.status_code, 303)
+            with sqlite3.connect(database) as connection:
+                status = connection.execute(
+                    "SELECT status FROM jobs WHERE id = 'job-1'"
+                ).fetchone()[0]
+                event = connection.execute(
+                    "SELECT event_type FROM events WHERE entity_id = 'job-1'"
+                ).fetchone()[0]
+            self.assertEqual(status, "apply_yourself")
+            self.assertEqual(event, "job_apply_yourself")
+
+    def test_export_is_read_only_and_edit_form_is_available(self):
+        item = QueueItem("job-1", "Python Developer", "Example Ltd", "Review me")
+        with TemporaryDirectory() as directory:
+            database = Path(directory) / "engine.sqlite3"
+            migrate(database)
+            client = TestClient(
+                create_dashboard_app({"drafts": (item,)}, database_path=database)
+            )
+            self.assertIn("Python Developer", client.get("/job/job-1/export").text)
+            self.assertEqual(client.get("/job/job-1/edit").status_code, 200)
+
     def test_health_endpoint(self):
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)

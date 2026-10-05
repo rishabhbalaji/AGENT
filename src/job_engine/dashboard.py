@@ -7,11 +7,12 @@ from html import escape
 import ipaddress
 import sqlite3
 from pathlib import Path
+from urllib.parse import parse_qs
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
-from .database import DatabaseError, migrate
+from .database import DatabaseError, migrate, update_job_status, update_job_text
 
 
 QUEUE_NAMES = ("applied", "apply-yourself", "parked", "drafts")
@@ -164,6 +165,16 @@ def _layout(content: str, *, title: str, active_queue: str | None = None) -> str
     .company {{ color: var(--accent); font-size: 13px; }}
     .summary {{ margin: 12px 0 0; color: var(--muted); font-size: 13px; }}
     .job-id {{ align-self: start; color: #71809a; font: 11px ui-monospace, SFMono-Regular, monospace; }}
+    .actions {{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }}
+    .actions form {{ display: inline; }}
+    .edit-form {{ display: grid; gap: 16px; max-width: 680px; }}
+    label {{ display: grid; gap: 7px; color: var(--muted); font-size: 12px; }}
+    input, textarea {{ width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--panel); color: var(--text); font: inherit; }}
+    button, .export {{
+      border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px;
+      background: #1b2942; color: var(--text); cursor: pointer; font: inherit; font-size: 11px;
+    }}
+    button:hover, .export:hover {{ border-color: var(--accent); background: #24395d; }}
     .empty {{ padding: 42px 20px; border: 1px dashed #33435f; border-radius: 13px; text-align: center; background: rgba(18, 26, 42, .42); }}
     .empty strong {{ display: block; margin-bottom: 5px; font-size: 16px; }}
     .empty span {{ color: var(--muted); font-size: 13px; }}
@@ -238,10 +249,17 @@ def queues_from_database(database_path: Path) -> dict[str, tuple[QueueItem, ...]
 
 def create_dashboard_app(
     queues: dict[str, tuple[QueueItem, ...]] | None = None,
+    *,
+    database_path: Path | None = None,
 ) -> FastAPI:
     """Create a dashboard app with an isolated, read-only queue snapshot."""
     queue_data = dict(queues or {})
     app = FastAPI(title="Local Job Application Engine")
+
+    def refresh_queues() -> None:
+        nonlocal queue_data
+        if database_path is not None:
+            queue_data = queues_from_database(database_path)
 
     @app.get("/health", response_class=HTMLResponse)
     def health() -> str:
@@ -294,7 +312,19 @@ def create_dashboard_app(
                 '<article class="card">'
                 f"<div><h3>{escape(item.title)}</h3>"
                 f'<span class="company">{escape(item.company)}</span>'
-                f'<p class="summary">{escape(item.summary) or "No summary available."}</p></div>'
+                f'<p class="summary">{escape(item.summary) or "No summary available."}</p>'
+                '<div class="actions">'
+                + "".join(
+                    f'<form method="post" action="/job/{escape(item.job_id)}/action/{action}">'
+                    f'<button type="submit">{label}</button></form>'
+                    for action, label in (
+                        ("approve", "Approve"),
+                        ("park", "Park"),
+                        ("reject", "Reject"),
+                        ("mark-applied", "Mark applied"),
+                    )
+                )
+                + f'<a class="export" href="/job/{escape(item.job_id)}/export">Export</a></div></div>'
                 f'<span class="job-id">{escape(item.job_id)}</span>'
                 "</article>"
             )
@@ -317,6 +347,69 @@ def create_dashboard_app(
             title=QUEUE_LABELS[queue_name][0],
             active_queue=queue_name,
         )
+
+    @app.post("/job/{job_id}/action/{action}")
+    async def review_action(job_id: str, action: str, request: Request):
+        if database_path is None:
+            return HTMLResponse("Database-backed actions are not configured.", status_code=409)
+        actions = {
+            "approve": "apply_yourself",
+            "reject": "rejected",
+            "park": "parked",
+            "mark-applied": "applied",
+        }
+        try:
+            if action == "edit":
+                values = parse_qs((await request.body()).decode("utf-8"))
+                update_job_text(
+                    database_path,
+                    job_id,
+                    title=values.get("title", [""])[0],
+                    description=values.get("description", [""])[0],
+                )
+            else:
+                update_job_status(database_path, job_id, actions[action])
+        except (KeyError, DatabaseError, UnicodeDecodeError, ValueError) as exc:
+            return HTMLResponse(f"<h1>Action failed</h1><p>{escape(str(exc))}</p>", status_code=400)
+        refresh_queues()
+        return RedirectResponse("/", status_code=303)
+
+    @app.get("/job/{job_id}/edit", response_class=HTMLResponse)
+    def edit_job(job_id: str):
+        if database_path is None:
+            return HTMLResponse("Database-backed editing is not configured.", status_code=409)
+        item = next(
+            (candidate for items in queue_data.values() for candidate in items if candidate.job_id == job_id),
+            None,
+        )
+        if item is None:
+            return HTMLResponse("Job not found", status_code=404)
+        return _layout(
+            (
+                '<div class="topbar"><div><div class="eyebrow">Review item</div>'
+                f"<h1>Edit {escape(item.title)}</h1>"
+                '<p class="subtle">Correct local review text only. Source data is not changed.</p></div></div>'
+                f'<form class="edit-form" method="post" action="/job/{escape(job_id)}/action/edit">'
+                f'<label>Title<input name="title" value="{escape(item.title)}" required></label>'
+                f'<label>Summary<textarea name="description" rows="8">{escape(item.summary)}</textarea></label>'
+                '<div class="actions"><button type="submit">Save changes</button>'
+                '<a class="export" href="/">Cancel</a></div></form>'
+            ),
+            title="Edit job",
+        )
+
+    @app.get("/job/{job_id}/export", response_class=PlainTextResponse)
+    def export_job(job_id: str):
+        if database_path is None:
+            return PlainTextResponse("Database-backed export is not configured.", status_code=409)
+        for items in queue_data.values():
+            for item in items:
+                if item.job_id == job_id:
+                    return PlainTextResponse(
+                        f"Job ID: {item.job_id}\nTitle: {item.title}\n"
+                        f"Company: {item.company}\n\n{item.summary}\n"
+                    )
+        return PlainTextResponse("Job not found", status_code=404)
 
     return app
 

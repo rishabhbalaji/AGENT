@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import sqlite3
+import json
+from datetime import datetime, timezone
 from collections.abc import Callable
 from pathlib import Path
 
@@ -138,3 +140,68 @@ def record_event(
             return int(cursor.lastrowid)
     except sqlite3.Error as exc:
         raise DatabaseError(f"cannot record event in {database_path}: {exc}") from exc
+
+
+def update_job_status(database_path: Path, job_id: str, status: str) -> None:
+    """Update one job status and record the human review action."""
+    allowed = {
+        "apply_yourself",
+        "parked",
+        "rejected",
+        "applied",
+    }
+    if status not in allowed:
+        raise ValueError(f"unsupported review status: {status}")
+    migrate(database_path)
+    try:
+        with sqlite3.connect(database_path) as connection:
+            cursor = connection.execute(
+                "UPDATE jobs SET status = ?, last_seen_at = ? WHERE id = ?",
+                (status, datetime.now(timezone.utc).isoformat(), job_id),
+            )
+            if cursor.rowcount != 1:
+                raise DatabaseError(f"job not found: {job_id}")
+            connection.execute(
+                """
+                INSERT INTO events(event_type, entity_type, entity_id, payload_json, created_at)
+                VALUES (?, 'job', ?, ?, datetime('now'))
+                """,
+                (
+                    f"job_{status}",
+                    job_id,
+                    json.dumps({"status": status}, sort_keys=True),
+                ),
+            )
+    except sqlite3.Error as exc:
+        raise DatabaseError(f"cannot update job {job_id} in {database_path}: {exc}") from exc
+
+
+def update_job_text(
+    database_path: Path,
+    job_id: str,
+    *,
+    title: str,
+    description: str,
+) -> None:
+    """Edit review-safe job text and record the change."""
+    title = title.strip()
+    if not title:
+        raise ValueError("title must not be empty")
+    migrate(database_path)
+    try:
+        with sqlite3.connect(database_path) as connection:
+            cursor = connection.execute(
+                "UPDATE jobs SET title = ?, description = ? WHERE id = ?",
+                (title, description.strip(), job_id),
+            )
+            if cursor.rowcount != 1:
+                raise DatabaseError(f"job not found: {job_id}")
+            connection.execute(
+                """
+                INSERT INTO events(event_type, entity_type, entity_id, payload_json, created_at)
+                VALUES ('job_edited', 'job', ?, ?, datetime('now'))
+                """,
+                (job_id, json.dumps({"title": title}, sort_keys=True)),
+            )
+    except sqlite3.Error as exc:
+        raise DatabaseError(f"cannot edit job {job_id} in {database_path}: {exc}") from exc
