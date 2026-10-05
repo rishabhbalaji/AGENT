@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any
 
 from .ats import NormalizedPosting
+
+
+DEFAULT_CLEARANCE_EXCLUSIONS = ("SC", "SC Clearance", "Security Check")
 
 
 @dataclass(frozen=True)
@@ -37,6 +41,38 @@ def _text(posting: NormalizedPosting) -> str:
     ).casefold()
 
 
+def _clearance_matches(
+    posting: NormalizedPosting,
+    excluded_terms: tuple[str, ...],
+) -> tuple[str, ...]:
+    """Return configured clearance terms found in structured fields or job text."""
+    searchable = " ".join(
+        (
+            posting.title,
+            posting.company,
+            posting.description,
+            *(posting.requirements),
+            *(posting.clearance_requirements),
+        )
+    ).casefold()
+    matches: list[str] = []
+    for term in sorted(excluded_terms, key=len, reverse=True):
+        normalized = term.strip()
+        if not normalized:
+            continue
+        normalized_folded = normalized.casefold()
+        if any(normalized_folded in match for match in matches):
+            continue
+        pattern = (
+            r"\b"
+            + r"[-/\s]+".join(re.escape(part) for part in normalized.split())
+            + r"\b"
+        )
+        if re.search(pattern, searchable, flags=re.IGNORECASE):
+            matches.append(normalized_folded)
+    return tuple(matches)
+
+
 def _salary(posting: NormalizedPosting) -> float | None:
     value = posting.metadata.get("salary_gbp")
     try:
@@ -49,10 +85,25 @@ def match_profile(
     posting: NormalizedPosting,
     profile_name: str,
     profile: dict[str, Any],
+    *,
+    clearance_exclusions: tuple[str, ...] = DEFAULT_CLEARANCE_EXCLUSIONS,
 ) -> MatchDecision:
     """Score one posting against one validated profile configuration."""
     if not profile.get("enabled", False):
         return MatchDecision(profile_name, 0, 0, False, True, ("profile_disabled",), ())
+
+    clearance_matches = _clearance_matches(posting, clearance_exclusions)
+    threshold = int(profile.get("score_threshold", 100))
+    if clearance_matches:
+        return MatchDecision(
+            profile_name,
+            0,
+            threshold,
+            False,
+            True,
+            (f"clearance_exclusion:{','.join(clearance_matches)}",),
+            (),
+        )
 
     text = _text(posting)
     reasons: list[str] = []
@@ -135,7 +186,6 @@ def match_profile(
             excluded = True
             reasons.append("salary_floor_not_met")
 
-    threshold = int(profile.get("score_threshold", 100))
     matched = not excluded and score >= threshold
     if not matched and not excluded:
         reasons.append("below_score_threshold")
@@ -153,10 +203,17 @@ def match_profile(
 def match_enabled_profiles(
     posting: NormalizedPosting,
     profiles: dict[str, dict[str, Any]],
+    *,
+    clearance_exclusions: tuple[str, ...] = DEFAULT_CLEARANCE_EXCLUSIONS,
 ) -> tuple[MatchDecision, ...]:
     """Evaluate a posting against all configured profiles in stable order."""
     return tuple(
-        match_profile(posting, name, profiles[name])
+        match_profile(
+            posting,
+            name,
+            profiles[name],
+            clearance_exclusions=clearance_exclusions,
+        )
         for name in sorted(profiles)
         if profiles[name].get("enabled", False)
     )

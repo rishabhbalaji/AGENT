@@ -49,6 +49,44 @@ class MatchingTests(unittest.TestCase):
         self.assertFalse(decision.matched)
         self.assertIn("excluded_keywords:senior", decision.reasons)
 
+    def test_clearance_wording_is_excluded_before_scoring(self):
+        decision = match_profile(
+            posting(description="This role requires SC clearance."),
+            "full_time",
+            PROFILE,
+        )
+        self.assertTrue(decision.excluded)
+        self.assertFalse(decision.matched)
+        self.assertEqual(decision.score, 0)
+        self.assertEqual(decision.reasons, ("clearance_exclusion:sc clearance",))
+
+    def test_security_check_and_structured_clearance_are_excluded(self):
+        security_check = match_profile(
+            posting(description="Security Check required for this role."),
+            "full_time",
+            PROFILE,
+        )
+        structured = match_profile(
+            posting(
+                description="Build Python automation tools.",
+                clearance_requirements=("SC",),
+            ),
+            "full_time",
+            PROFILE,
+        )
+        self.assertTrue(security_check.excluded)
+        self.assertTrue(structured.excluded)
+
+    def test_clearance_terms_can_be_configured(self):
+        decision = match_profile(
+            posting(description="DV clearance required."),
+            "full_time",
+            PROFILE,
+            clearance_exclusions=("DV",),
+        )
+        self.assertTrue(decision.excluded)
+        self.assertIn("clearance_exclusion:dv", decision.reasons)
+
     def test_missing_optional_values_are_unknown(self):
         decision = match_profile(
             posting(location=None, remote_mode=None, metadata={}),
