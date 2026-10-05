@@ -15,6 +15,7 @@ src/job_engine/
 ├── greenhouse.py
 ├── matching.py
 ├── resume.py
+├── github_index.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -66,6 +67,10 @@ LLM.
 `job_engine.resume.import_pdf` extracts text from a local PDF master resume
 and records its source path, page count, and content hash. Resume files remain
 ignored by Git and are not copied into the repository.
+
+`job_engine.github_index.GitHubRepositoryIndexer` inventories only explicitly
+allowlisted public GitHub repositories using read-only API requests. It stores
+file metadata, not repository clones or credentials.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
