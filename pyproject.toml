@@ -7,7 +7,7 @@ name = "local-job-application-engine"
 version = "0.1.0"
 description = "A local-first job discovery and application assistant."
 requires-python = ">=3.12"
-dependencies = ["PyYAML>=6.0,<7"]
+dependencies = ["PyYAML>=6.0,<7", "pypdf>=5.0,<7"]
 
 [project.scripts]
 job-engine = "job_engine.cli:main"

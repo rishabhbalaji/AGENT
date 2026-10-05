@@ -14,6 +14,7 @@ src/job_engine/
 ├── fixtures.py
 ├── greenhouse.py
 ├── matching.py
+├── resume.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -61,6 +62,10 @@ duplicate fetches as repost signals before policy filtering.
 `job_engine.matching` applies enabled profile rules deterministically and
 returns explainable scores, exclusions, and unknown input fields without an
 LLM.
+
+`job_engine.resume.import_pdf` extracts text from a local PDF master resume
+and records its source path, page count, and content hash. Resume files remain
+ignored by Git and are not copied into the repository.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
