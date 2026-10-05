@@ -25,6 +25,15 @@ For the integration tests, install the test extra:
 python -m pip install -e ".[test]"
 ```
 
-The default address is `http://127.0.0.1:8000`. This stage deliberately binds
-only to loopback. Tailscale interface binding and access restriction are
-implemented in M4P0S1; do not expose this development server publicly.
+The default address is `http://127.0.0.1:8000`. To make it reachable from
+your tailnet, provide the machine's Tailscale IPv4 address:
+
+```bash
+job-engine dashboard --host 100.x.y.z --port 8000
+```
+
+The CLI accepts only loopback addresses or Tailscale's `100.64.0.0/10`
+address range. Wildcard addresses such as `0.0.0.0`, LAN addresses, public
+addresses, and hostnames are rejected. Binding to a Tailscale address is the
+access restriction for this stage; Tailscale ACLs remain responsible for
+tailnet authentication.

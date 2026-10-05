@@ -2,7 +2,12 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from job_engine.dashboard import QueueItem, create_dashboard_app
+from job_engine.dashboard import (
+    DashboardBindingError,
+    QueueItem,
+    create_dashboard_app,
+    validate_bind_host,
+)
 
 
 class DashboardTests(unittest.TestCase):
@@ -37,6 +42,16 @@ class DashboardTests(unittest.TestCase):
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
         self.assertIn("Dashboard healthy", response.text)
+
+    def test_bind_host_allows_loopback_and_tailscale_addresses(self):
+        self.assertEqual(validate_bind_host("127.0.0.1"), "127.0.0.1")
+        self.assertEqual(validate_bind_host("100.101.102.103"), "100.101.102.103")
+
+    def test_bind_host_rejects_wildcard_and_public_addresses(self):
+        for host in ("0.0.0.0", "::", "192.168.1.10", "example.com", ""):
+            with self.subTest(host=host):
+                with self.assertRaises(DashboardBindingError):
+                    validate_bind_host(host)
 
 
 if __name__ == "__main__":

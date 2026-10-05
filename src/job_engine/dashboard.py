@@ -4,13 +4,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from html import escape
-from typing import Iterable
+import ipaddress
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 
 QUEUE_NAMES = ("applied", "apply-yourself", "parked", "drafts")
+TAILSCALE_NETWORK = ipaddress.ip_network("100.64.0.0/10")
+
+
+class DashboardBindingError(ValueError):
+    """Raised when a dashboard bind address is not locally restricted."""
 
 
 @dataclass(frozen=True)
@@ -21,6 +26,26 @@ class QueueItem:
     title: str
     company: str
     summary: str
+
+
+def validate_bind_host(host: str) -> str:
+    """Allow loopback or Tailscale addresses, never wildcard/public binds."""
+    candidate = host.strip()
+    if not candidate:
+        raise DashboardBindingError("dashboard host must be non-empty")
+    if candidate in {"localhost", "127.0.0.1", "::1"}:
+        return candidate
+    try:
+        address = ipaddress.ip_address(candidate)
+    except ValueError as exc:
+        raise DashboardBindingError(
+            "dashboard host must be loopback or a Tailscale 100.64.0.0/10 address"
+        ) from exc
+    if address.version != 4 or address not in TAILSCALE_NETWORK:
+        raise DashboardBindingError(
+            "dashboard host must be loopback or a Tailscale 100.64.0.0/10 address"
+        )
+    return candidate
 
 
 def _queue_items(

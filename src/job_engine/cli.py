@@ -11,6 +11,7 @@ from pathlib import Path
 from . import __version__
 from .config import ConfigurationError
 from .database import DatabaseError
+from .dashboard import DashboardBindingError, validate_bind_host
 from .health import run_health_from_strings
 from .logging import configure_logging
 from scripts.storage_check import StorageCheckError
@@ -79,7 +80,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
             from .dashboard import create_dashboard_app, empty_queues
 
-            uvicorn.run(create_dashboard_app(empty_queues()), host=args.host, port=args.port)
+            host = validate_bind_host(args.host)
+            print(f"Dashboard available at http://{host}:{args.port}", flush=True)
+            uvicorn.run(create_dashboard_app(empty_queues()), host=host, port=args.port)
+        except (DashboardBindingError, ValueError) as exc:
+            print(f"dashboard failed: {exc}", file=sys.stderr)
+            return 1
         except ImportError as exc:
             print(f"dashboard failed: missing dependency: {exc}", file=sys.stderr)
             return 1
