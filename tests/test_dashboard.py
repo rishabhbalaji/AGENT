@@ -58,6 +58,21 @@ class DashboardTests(unittest.TestCase):
                     ("job-1", "Role", "Example", "fixture", "https://example.invalid",
                      "2026-01-01", "2026-01-01", "drafted"),
                 )
+                connection.execute(
+                    """
+                    INSERT INTO applications(
+                        id, job_id, route, status, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        "application-1",
+                        "job-1",
+                        "draft_for_approval",
+                        "drafted",
+                        "2026-01-01",
+                        "2026-01-01",
+                    ),
+                )
             client = TestClient(
                 create_dashboard_app(
                     queues_from_database(database),
@@ -70,10 +85,14 @@ class DashboardTests(unittest.TestCase):
                 status = connection.execute(
                     "SELECT status FROM jobs WHERE id = 'job-1'"
                 ).fetchone()[0]
+                application = connection.execute(
+                    "SELECT route, status FROM applications WHERE job_id = 'job-1'"
+                ).fetchone()
                 event = connection.execute(
                     "SELECT event_type FROM events WHERE entity_id = 'job-1'"
                 ).fetchone()[0]
             self.assertEqual(status, "apply_yourself")
+            self.assertEqual(application, ("review", "drafted"))
             self.assertEqual(event, "job_apply_yourself")
 
     def test_export_is_read_only_and_edit_form_is_available(self):

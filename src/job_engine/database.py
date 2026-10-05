@@ -152,15 +152,32 @@ def update_job_status(database_path: Path, job_id: str, status: str) -> None:
     }
     if status not in allowed:
         raise ValueError(f"unsupported review status: {status}")
+    application_state = {
+        "apply_yourself": ("review", "drafted"),
+        "parked": ("park", "parked"),
+        "rejected": ("park", "rejected"),
+        "applied": ("applied", "applied"),
+    }[status]
     migrate(database_path)
     try:
         with sqlite3.connect(database_path) as connection:
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("BEGIN")
             cursor = connection.execute(
                 "UPDATE jobs SET status = ?, last_seen_at = ? WHERE id = ?",
                 (status, datetime.now(timezone.utc).isoformat(), job_id),
             )
             if cursor.rowcount != 1:
+                connection.rollback()
                 raise DatabaseError(f"job not found: {job_id}")
+            connection.execute(
+                """
+                UPDATE applications
+                SET route = ?, status = ?, updated_at = ?
+                WHERE job_id = ?
+                """,
+                (*application_state, datetime.now(timezone.utc).isoformat(), job_id),
+            )
             connection.execute(
                 """
                 INSERT INTO events(event_type, entity_type, entity_id, payload_json, created_at)
@@ -172,6 +189,7 @@ def update_job_status(database_path: Path, job_id: str, status: str) -> None:
                     json.dumps({"status": status}, sort_keys=True),
                 ),
             )
+            connection.commit()
     except sqlite3.Error as exc:
         raise DatabaseError(f"cannot update job {job_id} in {database_path}: {exc}") from exc
 
