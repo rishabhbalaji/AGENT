@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from . import __version__
-from .config import ConfigurationError
+from .config import ConfigurationError, load_config
 from .database import DatabaseError
 from .dashboard import DashboardBindingError, validate_bind_host
 from .health import run_health_from_strings
@@ -18,6 +18,8 @@ from .ollama import OllamaClient, OllamaConfig, OllamaError
 from .ollama_benchmark import benchmark_models, results_as_json
 from .storage_check import StorageCheckError
 from .fixtures import FixtureError, seed_fixture_database
+from .discovery import discover
+from .greenhouse import GreenhouseAdapter
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -80,6 +82,19 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark.add_argument("--model", action="append", required=True)
     benchmark.add_argument("--timeout", type=float, default=60.0)
     benchmark.add_argument("--output", type=Path)
+    discovery = subparsers.add_parser(
+        "discover",
+        help="fetch configured public Greenhouse boards and evaluate profiles",
+    )
+    discovery.add_argument("--config-dir", type=Path, default=Path("config/local"))
+    discovery.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
+    discovery.add_argument("--board", action="append", required=True)
+    discovery.add_argument("--timeout", type=float, default=15.0)
+    discovery.add_argument(
+        "--persist",
+        action="store_true",
+        help="write results to SQLite; without this flag the command is a dry run",
+    )
     return parser
 
 
@@ -165,6 +180,43 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(serialized)
         except (OllamaError, ValueError, OSError) as exc:
             print(f"ollama benchmark failed: {exc}", file=sys.stderr)
+            return 1
+    elif args.command == "discover":
+        try:
+            configuration = load_config(args.config_dir)
+            reports = []
+            for board in args.board:
+                report = discover(
+                    GreenhouseAdapter(board, source_name=f"greenhouse:{board}", timeout=args.timeout),
+                    configuration,
+                    database_path=args.database,
+                    dry_run=not args.persist,
+                )
+                reports.append(
+                    {
+                        "source": report.source,
+                        "health_status": report.health_status,
+                        "records_seen": report.records_seen,
+                        "persisted": report.persisted,
+                        "jobs": [
+                            {
+                                "id": job.stable_id,
+                                "title": job.title,
+                                "company": job.company,
+                                "status": job.status,
+                                "profile": job.decision.profile_name,
+                                "score": job.decision.score,
+                                "reasons": list(job.decision.reasons),
+                                "unknowns": list(job.decision.unknowns),
+                                "url": job.source_url,
+                            }
+                            for job in report.jobs
+                        ],
+                    }
+                )
+            print(json.dumps(reports, indent=2, sort_keys=True))
+        except (ConfigurationError, DatabaseError, ValueError, OSError) as exc:
+            print(f"discovery failed: {exc}", file=sys.stderr)
             return 1
     return 0
 

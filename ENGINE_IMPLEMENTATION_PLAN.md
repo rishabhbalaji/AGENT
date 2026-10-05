@@ -262,6 +262,10 @@ Every stage must provide:
 - **M4P2S3 — Add fixture model drafting** (`M4P2S3-add-fixture-model-drafting`): require model-generated claims to resolve against local evidence before creating local drafts.
 - **M4P2S4 — Evaluate model document gates** (`M4P2S4-evaluate-model-document-gates`): produce local pass/fail results for evidence-constrained model drafts and deterministic document gates.
 
+**M4P3 — Live discovery**
+
+- **M4P3S0 — Add discovery runner** (`M4P3S0-add-discovery-runner`): fetch a configured public source, apply deterministic matching, and support dry-run or SQLite persistence.
+
 #### Milestone 5 — Operations, status tracking, and isolation
 
 **M5P0 — Daily operations**
