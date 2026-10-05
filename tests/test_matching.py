@@ -1,0 +1,83 @@
+import unittest
+
+from job_engine.ats import NormalizedPosting
+from job_engine.matching import match_enabled_profiles, match_profile
+
+
+def posting(**overrides):
+    values = {
+        "source_name": "fixture",
+        "source_job_id": "job-1",
+        "title": "Python Automation Developer",
+        "company": "Example Ltd",
+        "source_url": "https://example.invalid/jobs/1",
+        "description": "Build tested Python automation tools.",
+        "location": "Manchester, GB",
+        "employment_type": "full_time",
+        "remote_mode": "hybrid",
+        "metadata": {"salary_gbp": "42000"},
+    }
+    values.update(overrides)
+    return NormalizedPosting(**values)
+
+
+PROFILE = {
+    "enabled": True,
+    "employment_types": ["full_time"],
+    "keywords": {"include": ["Python"], "exclude": ["senior"]},
+    "locations": {"include": ["Manchester"]},
+    "remote": {"modes": ["hybrid"]},
+    "salary": {"minimum_gbp": 40000},
+    "score_threshold": 70,
+}
+
+
+class MatchingTests(unittest.TestCase):
+    def test_matching_profile_is_explainable(self):
+        decision = match_profile(posting(), "full_time", PROFILE)
+        self.assertTrue(decision.matched)
+        self.assertEqual(decision.score, 80)
+        self.assertIn("include_keywords:python", decision.reasons)
+
+    def test_excluded_keyword_blocks_match(self):
+        decision = match_profile(
+            posting(title="Senior Python Automation Developer"),
+            "full_time",
+            PROFILE,
+        )
+        self.assertTrue(decision.excluded)
+        self.assertFalse(decision.matched)
+        self.assertIn("excluded_keywords:senior", decision.reasons)
+
+    def test_missing_optional_values_are_unknown(self):
+        decision = match_profile(
+            posting(location=None, remote_mode=None, metadata={}),
+            "full_time",
+            PROFILE,
+        )
+        self.assertFalse(decision.matched)
+        self.assertIn("salary_missing", decision.unknowns)
+        self.assertIn("location_missing", decision.unknowns)
+
+    def test_mismatched_employment_type_is_excluded(self):
+        decision = match_profile(
+            posting(employment_type="part_time"),
+            "full_time",
+            PROFILE,
+        )
+        self.assertTrue(decision.excluded)
+        self.assertIn("employment_type_mismatch", decision.reasons)
+
+    def test_enabled_profiles_are_sorted_and_disabled_profiles_omitted(self):
+        decisions = match_enabled_profiles(
+            posting(),
+            {
+                "z_profile": PROFILE,
+                "a_profile": PROFILE,
+                "disabled": {**PROFILE, "enabled": False},
+            },
+        )
+        self.assertEqual(
+            tuple(decision.profile_name for decision in decisions),
+            ("a_profile", "z_profile"),
+        )

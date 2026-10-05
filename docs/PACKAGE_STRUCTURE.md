@@ -13,6 +13,7 @@ src/job_engine/
 ├── database.py
 ├── fixtures.py
 ├── greenhouse.py
+├── matching.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -56,6 +57,10 @@ allowlist-gated contract for any future guest/public aggregator.
 `job_engine.normalization` canonicalizes source URLs, derives stable posting
 identities, preserves raw snapshots, computes expiration state, and marks
 duplicate fetches as repost signals before policy filtering.
+
+`job_engine.matching` applies enabled profile rules deterministically and
+returns explainable scores, exclusions, and unknown input fields without an
+LLM.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
