@@ -21,6 +21,7 @@ src/job_engine/
 ├── triage.py
 ├── model_output.py
 ├── documents.py
+├── document_gates.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -95,6 +96,10 @@ features.
 `job_engine.documents.generate_tailored_documents` creates local,
 evidence-backed text drafts for resumes, cover letters, ATS answers, and
 LinkedIn messages without submitting anything.
+
+`job_engine.document_gates.run_document_gates` checks packet structure,
+evidence references, and placeholder/ATS safety, returning explicit repair
+queue items without mutating the drafts.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
