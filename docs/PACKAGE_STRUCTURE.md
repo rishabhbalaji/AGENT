@@ -53,6 +53,10 @@ public-feed integration without embedding credentials or undocumented URLs.
 `job_engine.aggregator.GuestAggregatorAdapter` is a disabled-by-default,
 allowlist-gated contract for any future guest/public aggregator.
 
+`job_engine.normalization` canonicalizes source URLs, derives stable posting
+identities, preserves raw snapshots, computes expiration state, and marks
+duplicate fetches as repost signals before policy filtering.
+
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
 `docs/FIXTURES.md`.
