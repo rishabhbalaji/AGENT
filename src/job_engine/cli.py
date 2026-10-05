@@ -15,6 +15,7 @@ from .dashboard import DashboardBindingError, validate_bind_host
 from .health import run_health_from_strings
 from .logging import configure_logging
 from .ollama import OllamaClient, OllamaConfig, OllamaError
+from .ollama_benchmark import benchmark_models, results_as_json
 from .storage_check import StorageCheckError
 from .fixtures import FixtureError, seed_fixture_database
 
@@ -71,6 +72,14 @@ def build_parser() -> argparse.ArgumentParser:
     ollama.add_argument("--endpoint", required=True)
     ollama.add_argument("--model", required=True)
     ollama.add_argument("--timeout", type=float, default=10.0)
+    benchmark = subparsers.add_parser(
+        "ollama-benchmark",
+        help="benchmark configured Ollama models against fictional fixtures",
+    )
+    benchmark.add_argument("--endpoint", required=True)
+    benchmark.add_argument("--model", action="append", required=True)
+    benchmark.add_argument("--timeout", type=float, default=60.0)
+    benchmark.add_argument("--output", type=Path)
     return parser
 
 
@@ -143,6 +152,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                 sort_keys=True,
             )
         )
+    elif args.command == "ollama-benchmark":
+        try:
+            results = benchmark_models(
+                args.endpoint,
+                tuple(args.model),
+                timeout_seconds=args.timeout,
+            )
+            serialized = results_as_json(results)
+            if args.output:
+                args.output.write_text(serialized + "\n", encoding="utf-8")
+            print(serialized)
+        except (OllamaError, ValueError, OSError) as exc:
+            print(f"ollama benchmark failed: {exc}", file=sys.stderr)
+            return 1
     return 0
 
 
