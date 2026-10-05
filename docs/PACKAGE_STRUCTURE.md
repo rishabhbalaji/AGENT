@@ -17,6 +17,7 @@ src/job_engine/
 ├── resume.py
 ├── github_index.py
 ├── evidence.py
+├── claims.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -76,6 +77,10 @@ file metadata, not repository clones or credentials.
 `job_engine.evidence` creates stable, traceable chunks from the local resume
 and indexed public repository text files. Each chunk retains source identity,
 revision/hash information, and a content hash.
+
+`job_engine.claims.validate_claims` rejects generated claims without evidence
+references or with unknown/repeated chunk IDs before application material is
+accepted.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
