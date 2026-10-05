@@ -11,6 +11,7 @@ src/job_engine/
 ├── ats.py
 ├── database.py
 ├── fixtures.py
+├── greenhouse.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -43,6 +44,9 @@ Public job-source adapters implement the contracts in `job_engine.ats`.
 `NormalizedPosting` keeps source-specific responses out of the rest of the
 engine, while `SourceHealth` and `RateLimit` provide fetch observability and
 scheduling metadata.
+
+`job_engine.greenhouse.GreenhouseAdapter` is the first concrete adapter. It
+fetches public Greenhouse board listings and reports explicit source health.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in
