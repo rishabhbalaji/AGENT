@@ -22,6 +22,7 @@ src/job_engine/
 ├── model_output.py
 ├── documents.py
 ├── document_gates.py
+├── dashboard.py
 ├── health.py
 ├── logging.py
 └── modes.py
@@ -100,6 +101,9 @@ LinkedIn messages without submitting anything.
 `job_engine.document_gates.run_document_gates` checks packet structure,
 evidence references, and placeholder/ATS safety, returning explicit repair
 queue items without mutating the drafts.
+
+`job_engine.dashboard.create_dashboard_app` provides the first local,
+server-rendered review queue interface. It is loopback-only in this stage.
 
 Offline fictional development data is loaded and validated by
 `job_engine.fixtures.load_fixture_set`. The fixture contract is documented in

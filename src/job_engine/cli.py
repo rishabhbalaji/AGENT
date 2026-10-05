@@ -48,6 +48,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="resolve the health check while the engine is paused",
     )
+    dashboard = subparsers.add_parser(
+        "dashboard",
+        help="run the local review dashboard",
+    )
+    dashboard.add_argument("--host", default="127.0.0.1")
+    dashboard.add_argument("--port", type=int, default=8000)
     return parser
 
 
@@ -67,6 +73,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"health check failed: {exc}", file=sys.stderr)
             return 1
         print(json.dumps(result, indent=2, sort_keys=True))
+    elif args.command == "dashboard":
+        try:
+            import uvicorn
+
+            from .dashboard import create_dashboard_app, empty_queues
+
+            uvicorn.run(create_dashboard_app(empty_queues()), host=args.host, port=args.port)
+        except ImportError as exc:
+            print(f"dashboard failed: missing dependency: {exc}", file=sys.stderr)
+            return 1
     return 0
 
 
