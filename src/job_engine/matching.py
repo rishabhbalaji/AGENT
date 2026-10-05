@@ -12,6 +12,7 @@ from .ats import NormalizedPosting
 
 DEFAULT_CLEARANCE_EXCLUSIONS = ("SC", "SC Clearance", "Security Check")
 DEFAULT_COMPANY_EXCLUSIONS: tuple[dict[str, Any], ...] = ()
+UK_COUNTRY_CODES = {"gb", "uk", "gbr"}
 
 
 @dataclass(frozen=True)
@@ -112,6 +113,82 @@ def _salary(posting: NormalizedPosting) -> float | None:
         return None
 
 
+def _metadata_values(posting: NormalizedPosting, key: str) -> tuple[str, ...]:
+    value = posting.metadata.get(key)
+    if not value:
+        return ()
+    return tuple(
+        item.casefold().strip()
+        for item in re.split(r"[,|;/]", value)
+        if item.strip()
+    )
+
+
+def _remote_eligibility(
+    posting: NormalizedPosting,
+    profile: dict[str, Any],
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Return remote eligibility reason codes and unknown fields."""
+    remote = profile.get("remote", {})
+    allowed_countries = {
+        value.casefold().strip()
+        for value in remote.get("allowed_countries", [])
+        if isinstance(value, str) and value.strip()
+    }
+    worldwide = remote.get("worldwide") is True
+    if not allowed_countries and not worldwide:
+        return (), ()
+
+    metadata = posting.metadata
+    work_countries = _metadata_values(posting, "work_countries")
+    if not work_countries:
+        work_countries = _metadata_values(posting, "eligible_countries")
+    if not work_countries:
+        location_parts = re.split(r"[,|;/]", posting.location or "")
+        work_countries = tuple(
+            item.casefold().strip()
+            for item in location_parts[-1:]
+            if item.strip() and len(item.strip()) <= 3
+        )
+
+    reasons: list[str] = []
+    unknowns: list[str] = []
+    if work_countries:
+        if not worldwide and not (set(work_countries) & allowed_countries):
+            reasons.append("work_country_incompatible")
+        elif any(country in UK_COUNTRY_CODES for country in work_countries):
+            reasons.append("work_country_compatible")
+    else:
+        unknowns.append("work_country_missing")
+
+    for metadata_key, reason in (
+        ("right_to_work_countries", "right_to_work_incompatible"),
+        ("tax_countries", "tax_country_incompatible"),
+    ):
+        values = _metadata_values(posting, metadata_key)
+        if values and not worldwide and not (set(values) & allowed_countries):
+            reasons.append(reason)
+        elif not values:
+            unknowns.append(f"{metadata_key}_missing")
+
+    timezones = _metadata_values(posting, "timezones")
+    if not timezones:
+        timezone = metadata.get("timezone", "").casefold().strip()
+        timezones = (timezone,) if timezone else ()
+    required_timezones = {
+        value.casefold().strip()
+        for value in remote.get("timezones", [])
+        if isinstance(value, str) and value.strip()
+    }
+    if required_timezones and timezones:
+        if not set(timezones) & required_timezones:
+            reasons.append("timezone_incompatible")
+    elif required_timezones:
+        unknowns.append("timezone_missing")
+
+    return tuple(dict.fromkeys(reasons)), tuple(dict.fromkeys(unknowns))
+
+
 def match_profile(
     posting: NormalizedPosting,
     profile_name: str,
@@ -154,6 +231,19 @@ def match_profile(
     unknowns: list[str] = []
     excluded = False
     score = 0
+
+    remote_reasons, remote_unknowns = _remote_eligibility(posting, profile)
+    if remote_reasons:
+        return MatchDecision(
+            profile_name,
+            0,
+            threshold,
+            False,
+            True,
+            remote_reasons,
+            remote_unknowns,
+        )
+    unknowns.extend(remote_unknowns)
 
     included = _terms(profile, "include")
     if included:

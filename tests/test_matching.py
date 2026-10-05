@@ -122,6 +122,67 @@ class MatchingTests(unittest.TestCase):
         decision = match_profile(posting(), "full_time", PROFILE)
         self.assertFalse(decision.excluded)
 
+    def test_incompatible_remote_country_is_excluded_before_scoring(self):
+        profile = {
+            **PROFILE,
+            "remote": {
+                "modes": ["hybrid"],
+                "allowed_countries": ["GB"],
+                "worldwide": False,
+            },
+        }
+        decision = match_profile(
+            posting(
+                location="New York, US",
+                metadata={"salary_gbp": "42000", "work_countries": "US"},
+            ),
+            "full_time",
+            profile,
+        )
+        self.assertTrue(decision.excluded)
+        self.assertEqual(decision.score, 0)
+        self.assertIn("work_country_incompatible", decision.reasons)
+
+    def test_remote_unknowns_are_explicit(self):
+        profile = {
+            **PROFILE,
+            "remote": {
+                "modes": ["hybrid"],
+                "allowed_countries": ["GB"],
+                "worldwide": False,
+                "timezones": ["Europe/London"],
+            },
+        }
+        decision = match_profile(
+            posting(location=None, metadata={"salary_gbp": "42000"}),
+            "full_time",
+            profile,
+        )
+        self.assertIn("work_country_missing", decision.unknowns)
+        self.assertIn("right_to_work_countries_missing", decision.unknowns)
+        self.assertIn("tax_countries_missing", decision.unknowns)
+        self.assertIn("timezone_missing", decision.unknowns)
+
+    def test_worldwide_remote_role_does_not_require_country_overlap(self):
+        profile = {
+            **PROFILE,
+            "remote": {
+                "modes": ["hybrid"],
+                "allowed_countries": ["GB"],
+                "worldwide": True,
+            },
+            "locations": {"include": []},
+        }
+        decision = match_profile(
+            posting(
+                location="Toronto, CA",
+                metadata={"salary_gbp": "42000", "work_countries": "CA"},
+            ),
+            "full_time",
+            profile,
+        )
+        self.assertFalse(decision.excluded)
+
     def test_missing_optional_values_are_unknown(self):
         decision = match_profile(
             posting(location=None, remote_mode=None, metadata={}),

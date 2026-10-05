@@ -9,6 +9,7 @@ profile configuration. It applies:
 - employment-type constraints;
 - configured location substrings;
 - configured remote modes;
+- remote country, right-to-work, tax-country, and timezone eligibility;
 - an optional `salary_gbp` metadata value and minimum salary;
 - the profile score threshold.
 
@@ -25,3 +26,10 @@ additional clearance profiles.
 Company exclusions are supplied as mappings with a canonical `name`, optional
 `aliases`, optional `domains`, and a required explanatory `reason`. A matching
 company is excluded before scoring and the reason is retained in the decision.
+
+Remote eligibility reads optional posting metadata keys:
+`work_countries` (or `eligible_countries`), `right_to_work_countries`,
+`tax_countries`, and `timezone`/`timezones`. Values are comma, pipe, semicolon,
+or slash separated. Profiles may configure `remote.allowed_countries`,
+`remote.timezones`, and `remote.worldwide`. Explicit incompatibilities exclude a
+posting; missing values are returned as unknowns.

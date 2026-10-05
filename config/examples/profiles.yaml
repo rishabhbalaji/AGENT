@@ -19,6 +19,8 @@ profiles:
         - onsite
       allowed_countries:
         - GB
+      timezones:
+        - Europe/London
       worldwide: false
     salary:
       minimum_gbp: null
@@ -44,6 +46,8 @@ profiles:
         - onsite
       allowed_countries:
         - GB
+      timezones:
+        - Europe/London
       worldwide: false
     salary:
       minimum_gbp: null
@@ -64,6 +68,7 @@ profiles:
     remote:
       modes: []
       allowed_countries: []
+      timezones: []
       worldwide: false
     salary:
       minimum_gbp: null
