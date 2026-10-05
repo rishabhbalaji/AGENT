@@ -2,10 +2,19 @@ import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-from job_engine.worker import run_bounded_worker
+from job_engine.worker import clear_pause, pause_status, run_bounded_worker, set_pause
 
 
 class WorkerTests(TestCase):
+    def test_pause_can_be_set_cleared_and_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pause = Path(directory) / "controls" / "PAUSED"
+            self.assertFalse(pause_status(pause))
+            set_pause(pause)
+            self.assertTrue(pause_status(pause))
+            clear_pause(pause)
+            self.assertFalse(pause_status(pause))
+
     def test_pause_prevents_task(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

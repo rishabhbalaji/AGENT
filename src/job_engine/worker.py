@@ -16,6 +16,29 @@ class WorkerResult:
     value: object | None = None
 
 
+def set_pause(pause_path: Path) -> Path:
+    """Create the explicit pause marker used by supervised workers."""
+    pause_path = pause_path.expanduser()
+    pause_path.parent.mkdir(parents=True, exist_ok=True)
+    pause_path.touch(exist_ok=True)
+    return pause_path
+
+
+def clear_pause(pause_path: Path) -> Path:
+    """Remove the explicit pause marker, if present."""
+    pause_path = pause_path.expanduser()
+    try:
+        pause_path.unlink()
+    except FileNotFoundError:
+        pass
+    return pause_path
+
+
+def pause_status(pause_path: Path) -> bool:
+    """Return whether the explicit pause marker currently exists."""
+    return pause_path.expanduser().is_file()
+
+
 def run_bounded_worker(
     task: Callable[[], object],
     *,

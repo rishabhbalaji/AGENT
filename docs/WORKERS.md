@@ -19,5 +19,12 @@ systemctl --user daemon-reload
 systemctl --user enable --now job-engine-discovery.timer
 ```
 
-Create `PAUSED` in the engine directory to stop the next run. Remove it to
-resume. This stage does not yet enable model drafting or external ATS actions.
+The CLI provides explicit controls for the pause marker:
+
+```bash
+job-engine pause --pause-file /path/to/PAUSED
+job-engine worker-status --pause-file /path/to/PAUSED
+job-engine resume --pause-file /path/to/PAUSED
+```
+
+This stage does not yet enable model drafting or external ATS actions.

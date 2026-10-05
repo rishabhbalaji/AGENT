@@ -20,7 +20,7 @@ from .storage_check import StorageCheckError
 from .fixtures import FixtureError, seed_fixture_database
 from .discovery import discover
 from .greenhouse import GreenhouseAdapter
-from .worker import run_discovery_worker
+from .worker import clear_pause, pause_status, run_discovery_worker, set_pause
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -106,6 +106,21 @@ def build_parser() -> argparse.ArgumentParser:
     worker.add_argument("--timeout", type=float, default=20.0)
     worker.add_argument("--lock-file", type=Path, default=Path("engine.discovery.lock"))
     worker.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
+    pause = subparsers.add_parser(
+        "pause",
+        help="pause supervised workers by creating a control marker",
+    )
+    pause.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
+    resume = subparsers.add_parser(
+        "resume",
+        help="resume supervised workers by removing a control marker",
+    )
+    resume.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
+    worker_status = subparsers.add_parser(
+        "worker-status",
+        help="show whether supervised workers are paused",
+    )
+    worker_status.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
     return parser
 
 
@@ -265,6 +280,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (ConfigurationError, DatabaseError, ValueError, OSError) as exc:
             print(f"discovery worker failed: {exc}", file=sys.stderr)
             return 1
+    elif args.command == "pause":
+        try:
+            path = set_pause(args.pause_file)
+            print(json.dumps({"paused": True, "pause_file": str(path)}))
+        except OSError as exc:
+            print(f"pause failed: {exc}", file=sys.stderr)
+            return 1
+    elif args.command == "resume":
+        try:
+            path = clear_pause(args.pause_file)
+            print(json.dumps({"paused": False, "pause_file": str(path)}))
+        except OSError as exc:
+            print(f"resume failed: {exc}", file=sys.stderr)
+            return 1
+    elif args.command == "worker-status":
+        print(
+            json.dumps(
+                {
+                    "paused": pause_status(args.pause_file),
+                    "pause_file": str(args.pause_file.expanduser()),
+                }
+            )
+        )
     return 0
 
 
