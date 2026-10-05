@@ -260,6 +260,7 @@ Every stage must provide:
 - **M4P2S1 — Benchmark Ollama models** (`M4P2S1-benchmark-ollama-models`): evaluate installed models against fixed fictional postings before selecting triage or tailoring models.
 - **M4P2S2 — Add fixture model triage** (`M4P2S2-add-fixture-model-triage`): compare validated model observations with deterministic triage while keeping policy routes authoritative.
 - **M4P2S3 — Add fixture model drafting** (`M4P2S3-add-fixture-model-drafting`): require model-generated claims to resolve against local evidence before creating local drafts.
+- **M4P2S4 — Evaluate model document gates** (`M4P2S4-evaluate-model-document-gates`): produce local pass/fail results for evidence-constrained model drafts and deterministic document gates.
 
 #### Milestone 5 — Operations, status tracking, and isolation
 
