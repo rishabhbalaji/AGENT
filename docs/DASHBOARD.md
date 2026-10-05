@@ -27,13 +27,17 @@ Empty queues are shown explicitly. The dashboard does not submit applications.
 
 Queue cards provide explicit review actions:
 
-- **Approve** moves a job to `apply_yourself`; it does not submit anything.
-- **Park** moves a job to `parked`.
-- **Reject** moves a job to `rejected`.
-- **Mark applied** records the local `applied` status after the user applies
-  externally.
-- **Export** downloads a plain-text local review bundle.
-- **Edit** changes only the local title and summary and records an event.
+- **Drafts** show **Approve**, **Edit**, **Park**, **Reject**, and **Export**.
+- **Apply yourself** shows **Mark applied**, **Park**, **Reject**, and
+  **Export**.
+- **Parked** shows **Approve**, **Edit**, **Reject**, and **Export**.
+- **Applied** is read-only and shows **Export** only.
+
+Approve moves a job to `apply_yourself`; it does not submit anything. Park and
+Reject move jobs to their corresponding local states. Mark applied records the
+local `applied` status after the user applies externally. Export downloads a
+plain-text local review bundle. Edit changes only the local title and summary
+and records an event.
 
 Mutating actions use POST requests and every status or edit is recorded in the
 SQLite `events` table. The dashboard refreshes its queue snapshot after each

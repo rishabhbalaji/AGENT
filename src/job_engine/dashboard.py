@@ -22,6 +22,12 @@ QUEUE_LABELS = {
     "parked": ("Parked", "Set aside for later", "slate"),
     "drafts": ("Drafts", "Material ready to inspect", "blue"),
 }
+QUEUE_ACTIONS = {
+    "drafts": (("approve", "Approve"), ("edit", "Edit"), ("park", "Park"), ("reject", "Reject")),
+    "apply-yourself": (("mark-applied", "Mark applied"), ("park", "Park"), ("reject", "Reject")),
+    "parked": (("approve", "Approve"), ("edit", "Edit"), ("reject", "Reject")),
+    "applied": (),
+}
 TAILSCALE_NETWORK = ipaddress.ip_network("100.64.0.0/10")
 QUEUE_STATUSES = {
     "applied": ("applied",),
@@ -208,6 +214,18 @@ def _layout(content: str, *, title: str, active_queue: str | None = None) -> str
 </html>"""
 
 
+def _render_actions(job_id: str, queue_name: str) -> str:
+    actions = "".join(
+        (
+            f'<form method="post" action="/job/{escape(job_id)}/action/{action}">'
+            f'<button type="submit">{label}</button></form>'
+        )
+        for action, label in QUEUE_ACTIONS[queue_name]
+    )
+    export = f'<a class="export" href="/job/{escape(job_id)}/export">Export</a>'
+    return f'<div class="actions">{actions}{export}</div>'
+
+
 def queues_from_database(database_path: Path) -> dict[str, tuple[QueueItem, ...]]:
     """Load read-only review queues from the persisted jobs table."""
     database_path = database_path.expanduser()
@@ -313,18 +331,8 @@ def create_dashboard_app(
                 f"<div><h3>{escape(item.title)}</h3>"
                 f'<span class="company">{escape(item.company)}</span>'
                 f'<p class="summary">{escape(item.summary) or "No summary available."}</p>'
-                '<div class="actions">'
-                + "".join(
-                    f'<form method="post" action="/job/{escape(item.job_id)}/action/{action}">'
-                    f'<button type="submit">{label}</button></form>'
-                    for action, label in (
-                        ("approve", "Approve"),
-                        ("park", "Park"),
-                        ("reject", "Reject"),
-                        ("mark-applied", "Mark applied"),
-                    )
-                )
-                + f'<a class="export" href="/job/{escape(item.job_id)}/export">Export</a></div></div>'
+                + _render_actions(item.job_id, queue_name)
+                + "</div>"
                 f'<span class="job-id">{escape(item.job_id)}</span>'
                 "</article>"
             )

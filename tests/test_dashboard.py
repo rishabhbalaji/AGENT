@@ -38,6 +38,27 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Python Developer", response.text)
         self.assertIn("Review me", response.text)
+        self.assertIn(">Approve<", response.text)
+        self.assertIn(">Edit<", response.text)
+        self.assertNotIn(">Mark applied<", response.text)
+
+    def test_queue_actions_are_contextual(self):
+        item = QueueItem("job-1", "Role", "Example", "Summary")
+        client = TestClient(
+            create_dashboard_app(
+                {
+                    "apply-yourself": (item,),
+                    "applied": (item,),
+                }
+            )
+        )
+        apply_response = client.get("/queue/apply-yourself")
+        self.assertIn(">Mark applied<", apply_response.text)
+        self.assertNotIn(">Approve<", apply_response.text)
+        applied_response = client.get("/queue/applied")
+        self.assertIn(">Export<", applied_response.text)
+        self.assertNotIn(">Mark applied<", applied_response.text)
+        self.assertNotIn(">Reject<", applied_response.text)
 
     def test_unknown_queue_is_not_found(self):
         response = self.client.get("/queue/unknown")
