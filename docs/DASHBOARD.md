@@ -1,7 +1,9 @@
 # Local review dashboard
 
-`job_engine.dashboard.create_dashboard_app` creates the first server-rendered
-FastAPI review interface. It currently provides four read-only queues:
+`job_engine.dashboard.create_dashboard_app` creates a server-rendered FastAPI
+review interface with a responsive dark layout, queue navigation, item counts,
+and explicit read-only safety messaging. It currently provides four read-only
+queues:
 
 - `applied`
 - `apply-yourself`
