@@ -8,15 +8,25 @@ FastAPI review interface. It currently provides four read-only queues:
 - `parked`
 - `drafts`
 
-The app accepts an in-memory queue snapshot so persistence wiring can be added
-without coupling the first browser surface to an unfinished storage query
-layer. Empty queues are shown explicitly. The dashboard does not submit
-applications.
+The app accepts a queue snapshot, and `queues_from_database` loads that
+snapshot read-only from SQLite. Job statuses map to queues as follows:
+
+- `applied` → Applied
+- `apply_yourself` and `shortlisted` → Apply yourself
+- `parked` and `rejected` → Parked
+- `drafted` → Drafts
+
+Application records also contribute to the queues: submitted/applied
+applications appear under Applied, `review` routes under Apply yourself,
+`park` routes under Parked, and `draft_for_approval` or drafted applications
+under Drafts. A job is displayed at most once per queue.
+
+Empty queues are shown explicitly. The dashboard does not submit applications.
 
 Run it locally with:
 
 ```bash
-job-engine dashboard
+job-engine dashboard --database /path/to/engine.sqlite3
 ```
 
 For the integration tests, install the test extra:

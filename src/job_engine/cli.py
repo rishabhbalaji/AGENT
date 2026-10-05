@@ -55,6 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     dashboard.add_argument("--host", default="127.0.0.1")
     dashboard.add_argument("--port", type=int, default=8000)
+    dashboard.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
     return parser
 
 
@@ -78,12 +79,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         try:
             import uvicorn
 
-            from .dashboard import create_dashboard_app, empty_queues
+            from .dashboard import create_dashboard_app, queues_from_database
 
             host = validate_bind_host(args.host)
             print(f"Dashboard available at http://{host}:{args.port}", flush=True)
-            uvicorn.run(create_dashboard_app(empty_queues()), host=host, port=args.port)
-        except (DashboardBindingError, ValueError) as exc:
+            uvicorn.run(
+                create_dashboard_app(queues_from_database(args.database)),
+                host=host,
+                port=args.port,
+            )
+        except (DashboardBindingError, DatabaseError, ValueError) as exc:
             print(f"dashboard failed: {exc}", file=sys.stderr)
             return 1
         except ImportError as exc:

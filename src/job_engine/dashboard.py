@@ -5,13 +5,29 @@ from __future__ import annotations
 from dataclasses import dataclass
 from html import escape
 import ipaddress
+import sqlite3
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
+from .database import DatabaseError, migrate
+
 
 QUEUE_NAMES = ("applied", "apply-yourself", "parked", "drafts")
 TAILSCALE_NETWORK = ipaddress.ip_network("100.64.0.0/10")
+QUEUE_STATUSES = {
+    "applied": ("applied",),
+    "apply-yourself": ("apply_yourself", "shortlisted"),
+    "parked": ("parked", "rejected"),
+    "drafts": ("drafted",),
+}
+APPLICATION_QUEUE_FILTERS = {
+    "applied": ("status IN (?, ?)", ("submitted", "applied")),
+    "apply-yourself": ("route = ?", ("review",)),
+    "parked": ("route = ?", ("park",)),
+    "drafts": ("route = ? OR status = ?", ("draft_for_approval", "drafted")),
+}
 
 
 class DashboardBindingError(ValueError):
@@ -53,6 +69,45 @@ def _queue_items(
     queue_name: str,
 ) -> tuple[QueueItem, ...]:
     return queues.get(queue_name, ())
+
+
+def queues_from_database(database_path: Path) -> dict[str, tuple[QueueItem, ...]]:
+    """Load read-only review queues from the persisted jobs table."""
+    database_path = database_path.expanduser()
+    migrate(database_path)
+    queues = {name: [] for name in QUEUE_NAMES}
+    try:
+        with sqlite3.connect(database_path) as connection:
+            for queue_name, statuses in QUEUE_STATUSES.items():
+                placeholders = ",".join("?" for _ in statuses)
+                application_filter, application_values = APPLICATION_QUEUE_FILTERS[queue_name]
+                rows = connection.execute(
+                    f"""
+                    SELECT id, title, company, COALESCE(description, '')
+                    FROM jobs
+                    WHERE status IN ({placeholders})
+                       OR EXISTS (
+                           SELECT 1
+                           FROM applications
+                           WHERE applications.job_id = jobs.id
+                             AND ({application_filter})
+                       )
+                    ORDER BY last_seen_at DESC, id ASC
+                    """,
+                    (*statuses, *application_values),
+                )
+                queues[queue_name].extend(
+                    QueueItem(
+                        job_id=str(job_id),
+                        title=str(title),
+                        company=str(company),
+                        summary=str(description),
+                    )
+                    for job_id, title, company, description in rows
+                )
+    except sqlite3.Error as exc:
+        raise DatabaseError(f"cannot load dashboard queues from {database_path}: {exc}") from exc
+    return {name: tuple(items) for name, items in queues.items()}
 
 
 def create_dashboard_app(

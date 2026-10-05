@@ -103,8 +103,9 @@ LinkedIn messages without submitting anything.
 evidence references, and placeholder/ATS safety, returning explicit repair
 queue items without mutating the drafts.
 
-`job_engine.dashboard.create_dashboard_app` provides the first local,
-server-rendered review queue interface. It is loopback-only in this stage.
+`job_engine.dashboard.create_dashboard_app` provides the local, server-rendered
+review queue interface. `queues_from_database` reads persisted SQLite jobs
+into the queues without mutating or submitting anything.
 
 `job_engine.storage_check` contains the installed-package storage validation
 used by the CLI and health checks; the legacy `scripts/storage_check.py` module
