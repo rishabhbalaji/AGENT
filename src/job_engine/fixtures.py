@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from .database import DatabaseError, migrate
 
 
 class FixtureError(ValueError):
@@ -58,3 +62,67 @@ def load_fixture_set(fixtures_dir: Path) -> dict[str, Any]:
     if decision_ids != job_ids:
         raise FixtureError("route_decisions.json: every posting needs one route decision")
     return {"persona": persona, "postings": postings, "route_decisions": decisions}
+
+
+def seed_fixture_database(database_path: Path, fixtures_dir: Path) -> int:
+    """Seed a local database with validated fictional postings for manual review."""
+    fixture_set = load_fixture_set(fixtures_dir)
+    migrate(database_path)
+    decisions = {
+        decision["job_id"]: decision for decision in fixture_set["route_decisions"]
+    }
+    timestamp = datetime.now(timezone.utc).isoformat()
+    inserted = 0
+    try:
+        with sqlite3.connect(database_path) as connection:
+            for posting in fixture_set["postings"]:
+                job_id = posting["job_id"]
+                decision = decisions[job_id]
+                status = "parked" if decision["route"] == "park" else "drafted"
+                cursor = connection.execute(
+                    """
+                    INSERT OR IGNORE INTO jobs(
+                        id, title, company, location, source, source_url,
+                        description, first_seen_at, last_seen_at, status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        job_id,
+                        posting["title"],
+                        posting["company"],
+                        posting.get("location"),
+                        posting["source"],
+                        posting["source_url"],
+                        posting["description"],
+                        timestamp,
+                        timestamp,
+                        status,
+                    ),
+                )
+                if cursor.rowcount == 1:
+                    inserted += 1
+                    connection.execute(
+                        """
+                        INSERT OR IGNORE INTO applications(
+                            id, job_id, route, status, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            f"{job_id}-fixture-application",
+                            job_id,
+                            decision["route"],
+                            "parked" if status == "parked" else "drafted",
+                            timestamp,
+                            timestamp,
+                        ),
+                    )
+            connection.execute(
+                """
+                INSERT INTO events(event_type, entity_type, entity_id, payload_json, created_at)
+                VALUES ('fixture_seeded', 'database', ?, ?, datetime('now'))
+                """,
+                (str(database_path), json.dumps({"inserted": inserted}, sort_keys=True)),
+            )
+    except sqlite3.Error as exc:
+        raise DatabaseError(f"cannot seed fixture database {database_path}: {exc}") from exc
+    return inserted

@@ -15,6 +15,7 @@ from .dashboard import DashboardBindingError, validate_bind_host
 from .health import run_health_from_strings
 from .logging import configure_logging
 from .storage_check import StorageCheckError
+from .fixtures import FixtureError, seed_fixture_database
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -56,6 +57,12 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard.add_argument("--host", default="127.0.0.1")
     dashboard.add_argument("--port", type=int, default=8000)
     dashboard.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
+    demo = subparsers.add_parser(
+        "demo-data",
+        help="seed fictional offline postings into a local database for review",
+    )
+    demo.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
+    demo.add_argument("--fixtures-dir", type=Path, default=Path("fixtures"))
     return parser
 
 
@@ -75,6 +82,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"health check failed: {exc}", file=sys.stderr)
             return 1
         print(json.dumps(result, indent=2, sort_keys=True))
+    elif args.command == "demo-data":
+        try:
+            inserted = seed_fixture_database(args.database, args.fixtures_dir)
+        except (DatabaseError, FixtureError, ValueError) as exc:
+            print(f"demo data failed: {exc}", file=sys.stderr)
+            return 1
+        print(f"Seeded {inserted} fictional postings into {args.database}")
     elif args.command == "dashboard":
         try:
             import uvicorn

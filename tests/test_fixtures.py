@@ -2,7 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from job_engine.fixtures import FixtureError, load_fixture_set
+from job_engine.fixtures import FixtureError, load_fixture_set, seed_fixture_database
+from job_engine.database import migrate
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,3 +44,17 @@ class FixtureTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(FixtureError, "example.invalid"):
                 load_fixture_set(destination)
+
+    def test_seed_fixture_database_is_idempotent_and_reviewable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database = Path(directory) / "engine.sqlite3"
+            self.assertEqual(seed_fixture_database(database, FIXTURES), 3)
+            self.assertEqual(seed_fixture_database(database, FIXTURES), 0)
+            migrate(database)
+            import sqlite3
+
+            with sqlite3.connect(database) as connection:
+                rows = connection.execute(
+                    "SELECT status, COUNT(*) FROM jobs GROUP BY status ORDER BY status"
+                ).fetchall()
+            self.assertEqual(rows, [("drafted", 2), ("parked", 1)])

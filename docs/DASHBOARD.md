@@ -45,6 +45,18 @@ Run it locally with:
 job-engine dashboard --database /path/to/engine.sqlite3
 ```
 
+The dashboard does not invent or fetch jobs. For a safe manual walkthrough,
+seed the validated fictional fixtures into a separate local database:
+
+```bash
+job-engine demo-data --database demo-engine.sqlite3
+job-engine dashboard --database demo-engine.sqlite3
+```
+
+The command is idempotent and only accepts the repository's
+`example.invalid` fixture URLs. It never creates live postings or submits an
+application.
+
 For the integration tests, install the test extra:
 
 ```bash
