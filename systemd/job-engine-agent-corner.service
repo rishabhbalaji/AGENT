@@ -1,0 +1,14 @@
+[Unit]
+Description=Job Engine isolated Agent Corner check
+After=local-fs.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/AGENT
+ExecStart=%h/projects/AGENT/.venv/bin/job-engine agent-corner-check --root %h/projects/AGENT/agent-corner-runtime --production-root %h/projects/AGENT/runtime
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/projects/AGENT/agent-corner-runtime

@@ -11,6 +11,7 @@
 # Runtime state and local databases
 data/
 runtime/
+agent-corner-runtime/
 storage/
 artifacts/
 logs/

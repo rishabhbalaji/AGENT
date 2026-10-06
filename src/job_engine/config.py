@@ -141,6 +141,15 @@ def _validate_policy(document: dict[str, Any]) -> None:
         for key in ("query", "client_secret_path", "token_path"):
             if not isinstance(gmail.get(key), str) or not gmail[key].strip():
                 raise ConfigurationError(f"policy.yaml: gmail.{key} must be non-empty")
+    agent_corner = document.get("agent_corner")
+    if agent_corner is not None:
+        if not isinstance(agent_corner, dict):
+            raise ConfigurationError("policy.yaml: 'agent_corner' must be a mapping")
+        if not isinstance(agent_corner.get("enabled"), bool):
+            raise ConfigurationError("policy.yaml: agent_corner.enabled must be boolean")
+        for key in ("data_root", "production_root"):
+            if not isinstance(agent_corner.get(key), str) or not agent_corner[key].strip():
+                raise ConfigurationError(f"policy.yaml: agent_corner.{key} must be non-empty")
     deep_review = _require_mapping(document, "deep_review", "policy.yaml")
     clearance = _require_mapping(document, "clearance", "policy.yaml")
     applications = _require_mapping(document, "applications", "policy.yaml")
