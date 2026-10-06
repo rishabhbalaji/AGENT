@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from datetime import timedelta
 from pathlib import Path
 
 from . import __version__
@@ -23,6 +24,13 @@ from .greenhouse import GreenhouseAdapter
 from .worker import clear_pause, pause_status, run_discovery_worker, set_pause
 from .backups import backup_database, prune_backups
 from .recovery import run_recovery_checks
+from .gmail_ingestion import (
+    GmailIngestionError,
+    authorize_gmail,
+    build_gmail_service,
+    list_status_messages,
+    persist_status_messages,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -137,6 +145,17 @@ def build_parser() -> argparse.ArgumentParser:
     recovery.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
     recovery.add_argument("--backup-root", type=Path, default=Path("backups"))
     recovery.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
+    gmail = subparsers.add_parser(
+        "gmail-status",
+        help="poll recent Gmail status messages using read-only OAuth",
+    )
+    gmail.add_argument("--client-secret", type=Path, required=True)
+    gmail.add_argument("--token", type=Path, required=True)
+    gmail.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
+    gmail.add_argument("--lookback-hours", type=float, default=72.0)
+    gmail.add_argument("--max-messages", type=int, default=100)
+    gmail.add_argument("--query", default="in:anywhere")
+    gmail.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
     return parser
 
 
@@ -350,6 +369,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         if any(check.status == "failed" for check in checks):
             return 1
+    elif args.command == "gmail-status":
+        try:
+            if args.lookback_hours <= 0:
+                raise ValueError("lookback-hours must be positive")
+            if args.pause_file.exists():
+                raise GmailIngestionError("Gmail ingestion is paused")
+            credentials = authorize_gmail(args.client_secret, args.token)
+            service = build_gmail_service(credentials)
+            messages = list_status_messages(
+                service,
+                lookback=timedelta(hours=args.lookback_hours),
+                max_messages=args.max_messages,
+                query=args.query,
+            )
+            inserted = persist_status_messages(args.database, messages)
+        except (GmailIngestionError, DatabaseError, ValueError) as exc:
+            print(f"gmail status ingestion failed: {exc}", file=sys.stderr)
+            return 1
+        print(json.dumps({"fetched": len(messages), "inserted": inserted}, sort_keys=True))
     return 0
 
 
