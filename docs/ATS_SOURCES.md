@@ -25,6 +25,11 @@ network.
 adapter. Its endpoint is explicitly injected because the engine must not guess
 at an undocumented or changing endpoint. It accepts a normalized JSON feed
 shape, preserves the source URL, and uses the same explicit health behavior.
+The CLI includes it in a discovery pass with
+`--govuk-endpoint <https-url>` alongside repeated `--board` arguments. The
+endpoint must be operator-supplied and return the fixture-compatible
+`{"jobs": [...]}` shape; no login, cookies, or API secret is used. The same
+option is available to `discover-worker`.
 Reed and Adzuna remain configuration- and credential-gated until their API
 credentials and terms are deliberately enabled.
 

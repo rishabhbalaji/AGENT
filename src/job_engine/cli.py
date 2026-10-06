@@ -21,6 +21,7 @@ from .storage_check import StorageCheckError
 from .fixtures import FixtureError, seed_fixture_database
 from .discovery import discover
 from .greenhouse import GreenhouseAdapter
+from .public_feed import GovUkFindAJobAdapter
 from .worker import clear_pause, pause_status, run_discovery_worker, set_pause
 from .backups import backup_database, prune_backups
 from .recovery import run_recovery_checks
@@ -101,7 +102,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     discovery.add_argument("--config-dir", type=Path, default=Path("config/local"))
     discovery.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
-    discovery.add_argument("--board", action="append", required=True)
+    discovery.add_argument(
+        "--board",
+        action="append",
+        default=[],
+        help="Greenhouse board slug; may be repeated",
+    )
+    discovery.add_argument(
+        "--govuk-endpoint",
+        help="explicit public GOV.UK Find a Job JSON endpoint",
+    )
     discovery.add_argument("--timeout", type=float, default=15.0)
     discovery.add_argument(
         "--persist",
@@ -114,7 +124,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     worker.add_argument("--config-dir", type=Path, default=Path("config/local"))
     worker.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
-    worker.add_argument("--board", action="append", required=True)
+    worker.add_argument(
+        "--board",
+        action="append",
+        default=[],
+        help="Greenhouse board slug; may be repeated",
+    )
+    worker.add_argument(
+        "--govuk-endpoint",
+        help="explicit public GOV.UK Find a Job JSON endpoint",
+    )
     worker.add_argument("--timeout", type=float, default=20.0)
     worker.add_argument("--lock-file", type=Path, default=Path("engine.discovery.lock"))
     worker.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
@@ -265,10 +284,24 @@ def main(argv: Sequence[str] | None = None) -> int:
     elif args.command == "discover":
         try:
             configuration = load_config(args.config_dir)
+            adapters = [
+                GreenhouseAdapter(
+                    board,
+                    source_name=f"greenhouse:{board}",
+                    timeout=args.timeout,
+                )
+                for board in args.board
+            ]
+            if args.govuk_endpoint:
+                adapters.append(
+                    GovUkFindAJobAdapter(args.govuk_endpoint, timeout=args.timeout)
+                )
+            if not adapters:
+                raise ValueError("provide --board or --govuk-endpoint")
             reports = []
-            for board in args.board:
+            for adapter in adapters:
                 report = discover(
-                    GreenhouseAdapter(board, source_name=f"greenhouse:{board}", timeout=args.timeout),
+                    adapter,
                     configuration,
                     database_path=args.database,
                     dry_run=not args.persist,
@@ -302,16 +335,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     elif args.command == "discover-worker":
         try:
             configuration = load_config(args.config_dir)
-            adapters = tuple(
+            adapters = [
                 GreenhouseAdapter(
                     board,
                     source_name=f"greenhouse:{board}",
                     timeout=args.timeout,
                 )
                 for board in args.board
-            )
+            ]
+            if args.govuk_endpoint:
+                adapters.append(
+                    GovUkFindAJobAdapter(args.govuk_endpoint, timeout=args.timeout)
+                )
+            if not adapters:
+                raise ValueError("provide --board or --govuk-endpoint")
             result = run_discovery_worker(
-                adapters,
+                tuple(adapters),
                 configuration,
                 database_path=args.database,
                 lock_path=args.lock_file,

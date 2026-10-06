@@ -13,6 +13,13 @@ class PackageScaffoldTests(unittest.TestCase):
     def test_parser_has_expected_program_name(self):
         self.assertEqual(build_parser().prog, "job-engine")
 
+    def test_discovery_parser_accepts_govuk_endpoint_without_board(self):
+        args = build_parser().parse_args(
+            ["discover", "--govuk-endpoint", "https://example.invalid/feed"]
+        )
+        self.assertEqual(args.board, [])
+        self.assertEqual(args.govuk_endpoint, "https://example.invalid/feed")
+
     def test_main_accepts_log_level(self):
         self.assertEqual(main(["--log-level", "DEBUG"]), 0)
 

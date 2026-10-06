@@ -9,6 +9,7 @@ sources:
     enabled: true
     authentication: none
     rate_limit_per_minute: 10
+    endpoint: https://example.invalid/configure-a-public-govuk-json-endpoint
   reed:
     enabled: true
     authentication: api_key_later
