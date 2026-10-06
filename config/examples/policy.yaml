@@ -28,6 +28,14 @@ agent_corner:
   data_root: agent-corner-runtime
   production_root: runtime
 
+n8n:
+  enabled: false
+  dashboard_only: true
+  owns_business_logic: false
+  owns_irreplaceable_state: false
+  owns_credentials: false
+  owns_outbound_actions: false
+
 deep_review:
   max_actionable_queue_depth: 0
 
