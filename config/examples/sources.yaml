@@ -13,10 +13,17 @@ sources:
     enabled: true
     authentication: api_key_later
     rate_limit_per_minute: 10
+    api_key_env: REED_API_KEY
+    keywords: "graduate Python"
+    location: "United Kingdom"
   adzuna:
     enabled: true
     authentication: api_key_later
     rate_limit_per_minute: 10
+    app_id_env: ADZUNA_APP_ID
+    app_key_env: ADZUNA_APP_KEY
+    keywords: "graduate Python"
+    location: "United Kingdom"
   remote_feeds:
     enabled: true
     authentication: none

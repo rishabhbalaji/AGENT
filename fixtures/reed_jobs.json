@@ -1,0 +1,16 @@
+{
+  "totalResults": 1,
+  "results": [
+    {
+      "jobId": "reed-fixture-001",
+      "jobTitle": "Graduate Python Developer",
+      "employerName": "Example Systems",
+      "jobUrl": "https://example.invalid/reed/reed-fixture-001",
+      "jobDescription": "Support Python services and write tested automation.",
+      "locationName": "Manchester",
+      "contractType": "Permanent",
+      "date": "2026-01-21T09:00:00Z",
+      "expirationDate": "2026-02-21T09:00:00Z"
+    }
+  ]
+}
