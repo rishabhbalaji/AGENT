@@ -17,6 +17,7 @@ ollama:
   required_for_engine: true
   endpoint: http://100.93.206.16:11434
   model: qwen3:14b-16k
+  deep_review_model: qwen3-coder-64k:latest
 ```
 
 This is private local configuration and is not committed to Git.

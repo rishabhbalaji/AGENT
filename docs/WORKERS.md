@@ -35,6 +35,12 @@ job-engine resume --pause-file /path/to/PAUSED
 
 This stage does not yet enable model drafting or external ATS actions.
 
+The deep-review scheduling helper uses the same lock and pause boundary. It
+allows the large-context review task only during the configured
+`deep_review` schedule window and only when the actionable queue is at or below
+the configured threshold. It does not submit applications or bypass dashboard
+approval.
+
 The backup timer uses the same local control boundary and keeps the newest
 fourteen verified database backups. Application evidence is not pruned by this
 stage. A manual backup can be created with:

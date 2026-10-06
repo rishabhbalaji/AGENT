@@ -19,3 +19,16 @@ backlog.
 Successful local drafts and deterministic gate failures are persisted in the
 SQLite `drafts` and `repair_queue` tables. Persisting a draft does not change
 the approval-required application route or submit anything externally.
+
+## Deep review window
+
+The large-context review workload is separately gated by the schedule's
+`deep_review` action. The example schedule permits it only from `00:00` to
+`02:00` in `Europe/London`. The worker also requires the actionable queue to be
+at or below `deep_review.max_actionable_queue_depth` (currently `0`), so deep
+review cannot consume capacity while ordinary review work is waiting.
+
+The deep-review model is configured separately as
+`ollama.deep_review_model`. It is health-checked by exact model name before the
+review task runs. Outside the window, while paused, with actionable work
+present, or when Ollama is unavailable, the worker does not invoke the task.

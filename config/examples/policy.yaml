@@ -13,6 +13,10 @@ ollama:
   required_for_engine: true
   endpoint: http://127.0.0.1:11434
   model: qwen3:14b-16k
+  deep_review_model: qwen3-coder-64k:latest
+
+deep_review:
+  max_actionable_queue_depth: 0
 
 clearance:
   exclude_required_or_requested:

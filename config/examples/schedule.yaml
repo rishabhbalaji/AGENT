@@ -24,6 +24,11 @@ windows:
       - maintenance
       - status_ingestion
       - agent_corner
+  deep_review:
+    start: "00:00"
+    end: "02:00"
+    allow:
+      - deep_review
 
 pause:
   discovery: queue
