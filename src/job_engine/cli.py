@@ -31,6 +31,7 @@ from .gmail_ingestion import (
     list_status_messages,
     persist_status_messages,
 )
+from .agent_corner import AgentCornerIsolationError, AgentCornerPaths, prepare_paths
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -156,6 +157,12 @@ def build_parser() -> argparse.ArgumentParser:
     gmail.add_argument("--max-messages", type=int, default=100)
     gmail.add_argument("--query", default="in:anywhere")
     gmail.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
+    corner = subparsers.add_parser(
+        "agent-corner-check",
+        help="validate and prepare isolated Agent Corner paths",
+    )
+    corner.add_argument("--root", type=Path, required=True)
+    corner.add_argument("--production-root", type=Path, required=True)
     return parser
 
 
@@ -388,6 +395,28 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"gmail status ingestion failed: {exc}", file=sys.stderr)
             return 1
         print(json.dumps({"fetched": len(messages), "inserted": inserted}, sort_keys=True))
+    elif args.command == "agent-corner-check":
+        try:
+            paths = prepare_paths(
+                AgentCornerPaths.from_root(args.root),
+                production_root=args.production_root,
+            )
+        except (AgentCornerIsolationError, OSError) as exc:
+            print(f"agent corner isolation failed: {exc}", file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "status": "ready",
+                    "root": str(paths.root),
+                    "data": str(paths.data),
+                    "credentials": str(paths.credentials),
+                    "browser": str(paths.browser),
+                    "jobs": str(paths.jobs),
+                },
+                sort_keys=True,
+            )
+        )
     return 0
 
 

@@ -23,6 +23,11 @@ gmail:
   client_secret_path: config/local/gmail-client-secret.json
   token_path: runtime/gmail-token.json
 
+agent_corner:
+  enabled: true
+  data_root: agent-corner-runtime
+  production_root: runtime
+
 deep_review:
   max_actionable_queue_depth: 0
 
