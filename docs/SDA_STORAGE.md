@@ -9,15 +9,18 @@ The SSD and `/dev/sdb` must never be required by the application.
 change between boots or after hardware changes. The host setup must identify the
 filesystem UUID and use that UUID in `/etc/fstab`.
 
-The engine should use one fixed mount path, for example:
+The engine should use a fixed data-root path on the SDA-backed filesystem. A
+dedicated mount path is one option, but a directory inside the existing root
+filesystem is also valid when that filesystem is confirmed to be on `/dev/sda`.
 
 ```text
-/mnt/sda
+/home/rbk/projects/AGENT/runtime
 ```
 
-The final path must be confirmed on `rbkasus` before it is placed in local
-configuration. The repository examples use `/mnt/sda/job-engine` as a safe
-placeholder; they do not create or mount that path.
+On the current host, `/dev/sda2` is mounted at `/`, so the repository-local
+runtime directory is on the required SDA-backed filesystem. The local
+configuration uses this path; it is ignored by Git and contains the database,
+backups, lock, and pause marker.
 
 ## Discovery commands
 
@@ -63,7 +66,7 @@ The reusable check in `scripts/storage_check.py` validates a configured data
 root before the engine starts:
 
 ```bash
-python3 scripts/storage_check.py /mnt/sda/job-engine
+python3 scripts/storage_check.py /home/rbk/projects/AGENT/runtime
 ```
 
 It fails closed when the directory is missing, not writable, read-only, not
@@ -73,16 +76,14 @@ write access. The temporary file is removed immediately.
 
 ## Engine data layout
 
-Once the mount is confirmed, create the application data root below it:
+Once the storage location is confirmed, the application data root contains:
 
 ```text
-/mnt/sda/job-engine/
-├── config/
-├── data/
-├── artifacts/
-├── logs/
+/home/rbk/projects/AGENT/runtime/
 ├── backups/
-└── tmp/
+├── engine.sqlite3
+├── engine.discovery.lock
+└── PAUSED
 ```
 
 The runtime user must own the application directory. Secrets and personal

@@ -26,6 +26,13 @@ This file is the implementation plan. `Reference Documents/Local Job Application
 - GitHub indexing begins with an explicit public-repository allowlist. Private repositories are a later opt-in feature.
 - Development starts with fictional personas, synthetic postings, and local ATS fixtures. Live discovery and submissions are enabled only after the dry-run and safety gates pass.
 - A self-hosted Vaultwarden instance on SDA and restricted to Tailscale is the intended future password-vault solution. It is not required for the first dry-run milestone.
+- The project machine is dedicated to the engine and has approximately 100 GB currently available; no new Ollama models should be downloaded by the engine.
+- Installed Ollama models are routed by workload: `qwen3:14b-16k` for routine triage and drafting, `qwen3-coder:30b-16k` for technical roles, and `qwen3-coder-64k:latest` for deep review.
+- Deep review has a dedicated `00:00-02:00` UK window and may run opportunistically when the actionable queue is practically empty.
+- Automatic document generation is capped at the best 15 suitable jobs per day. Other suitable jobs remain queued until capacity or explicit review.
+- Ollama availability is a prerequisite for discovery, triage, drafting, and application workers. When the exact configured endpoint or model is unavailable, those workers stop closed rather than creating a backlog. Backups, recovery checks, disk-space checks, and status reporting may continue.
+- n8n may later run self-hosted on the project machine for orchestration and dashboard-oriented workflows. The Python engine and SQLite remain authoritative; n8n must not own business logic or irreplaceable state.
+- A future local MCP layer may provide read-only, explicitly scoped context retrieval for model workflows. MCP must not write the database, bypass gates, or submit applications.
 
 ## Version control
 
@@ -61,7 +68,7 @@ All times are UK local time and must be configurable:
 - Outside an active application window: drafting, maintenance, status ingestion, and isolated Agent Corner work may continue, but no applications are submitted.
 - A configurable transition and maintenance window may pause or drain workers cleanly.
 
-Gaming pause/resume must stop inference, tailoring, and application workers while allowing lightweight discovery to continue or queue.
+Gaming pause/resume must stop inference, tailoring, and application workers while allowing lightweight discovery to continue or queue. An Ollama outage is stricter: discovery also stops so model work cannot accumulate an unbounded backlog.
 
 ## Chosen architecture
 
@@ -76,15 +83,31 @@ Gaming pause/resume must stop inference, tailoring, and application workers whil
 
 ### Optional control plane
 
-Start with Python scheduling and explicit commands. Add self-hosted n8n after the core workflow is observable and tested. n8n may trigger workers and digest jobs, but must not own business logic or irreplaceable state.
+Start with Python scheduling and explicit commands. Add self-hosted n8n on
+`rbkasus` after the core workflow is observable and tested. n8n may trigger
+workers and dashboard-oriented digest jobs, but must not own business logic or
+irreplaceable state. Initial notifications remain dashboard-only.
+
+### Optional model context layer
+
+Add a local, read-only MCP layer only after the Python engine's evidence and
+drafting contracts are stable. MCP may expose approved job, resume-evidence,
+repository-evidence, and draft context to Ollama workflows. It must not write
+SQLite, alter deterministic decisions, approve documents, access credentials,
+or submit applications.
 
 ### Inference on `rbkmsi`
 
 - Ollama calls use a configurable Tailscale endpoint.
-- Initial triage model: an installed lightweight/general model selected through configuration.
-- Tailoring model: benchmark installed models against a fixed local evaluation set before choosing one.
+- Initial triage and routine drafting model: `qwen3:14b-16k`.
+- Technical-role model: `qwen3-coder:30b-16k`.
+- Deep-review model: `qwen3-coder-64k:latest`.
+- The deep-review window is `00:00-02:00` UK time, with opportunistic execution
+  only when the actionable queue is practically empty.
+- No model download or automatic fallback is permitted.
+- Model routing is explicit and configuration-driven; the engine does not
+  switch models silently.
 - Embeddings: use a free local Ollama embedding model only if retrieval quality justifies its memory and storage cost.
-- No model download or model switch may be required for the discovery-only path.
 
 ## Career-ops integration assessment
 
@@ -275,15 +298,16 @@ Every stage must provide:
 - **M5P0S1 — Add pause and resume controls** (`M5P0S1-add-pause-resume-controls`): expose explicit CLI pause, resume, and status controls for supervised workers.
 - **M5P0S2 — Add retention and local backups** (`M5P0S2-add-retention-and-backups`): create verified SQLite backups with conservative, explicit pruning that never removes application evidence.
 - **M5P0S3 — Add recovery checks** (`M5P0S3-add-recovery-checks`): provide read-only checks for database integrity, backup readability, and worker pause state.
-- **M5P0S1 — Add pause and resume** (`M5P0S1-add-pause-and-resume`): stop inference, tailoring, and applications during gaming while allowing lightweight discovery to queue.
-- **M5P0S2 — Add retention and local backups** (`M5P0S2-add-retention-and-backups`): retain application evidence indefinitely, raw snapshots for approximately 12 months, and prune redundant caches.
-- **M5P0S3 — Add recovery checks** (`M5P0S3-add-recovery-checks`): test reboot recovery, Ollama outages, read-only SDA, and resumable workflows.
+- **M5P0S4 — Enforce Ollama availability gate** (`M5P0S4-enforce-ollama-availability-gate`): require the exact configured Ollama endpoint and model before discovery, triage, drafting, or application workers run; fail closed without creating a backlog while allowing backups, recovery, disk-space, and status checks.
+- **M5P0S5 — Add model-assisted drafting worker** (`M5P0S5-add-model-assisted-drafting-worker`): process only the best 15 suitable jobs per day, route models by workload, create evidence-backed local drafts, and leave all external actions approval-gated.
+- **M5P0S6 — Add deep-review scheduling** (`M5P0S6-add-deep-review-scheduling`): run the large-context review model during `00:00-02:00` UK time and opportunistically only when the actionable queue is practically empty.
 
 **M5P1 — Status and isolation**
 
 - **M5P1S0 — Add dedicated Gmail ingestion** (`M5P1S0-add-dedicated-gmail-ingestion`): add read-only IMAP status ingestion for a dedicated application account; never send email.
 - **M5P1S1 — Isolate Agent Corner** (`M5P1S1-isolate-agent-corner`): separate data, process, credentials, browser sessions, job records, and outbound actions.
-- **M5P1S2 — Evaluate n8n** (`M5P1S2-evaluate-n8n`): add self-hosted n8n only if it reduces operational friction without owning business logic or irreplaceable state.
+- **M5P1S2 — Evaluate n8n** (`M5P1S2-evaluate-n8n`): add self-hosted n8n on `rbkasus` only if it reduces operational friction without owning business logic or irreplaceable state; begin with dashboard-only workflows.
+- **M5P1S3 — Add read-only MCP context layer** (`M5P1S3-add-read-only-mcp-context-layer`): expose narrowly scoped job, evidence, repository, and draft context to local model workflows without write access or safety-policy authority.
 
 The detailed implementation guidance and exit criteria for these stages are defined below. A stage may be split into additional numbered stages later, but existing stage identifiers must not be silently renumbered after they have been handed off.
 

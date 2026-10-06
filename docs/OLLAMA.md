@@ -3,6 +3,24 @@
 The engine can verify and query one explicitly configured Ollama model through a
 Tailscale-reachable HTTP endpoint. It never selects a fallback model.
 
+## Engine availability policy
+
+The unattended engine is configured to require the Ollama endpoint and the
+selected model. If either is unavailable, the engine must fail closed rather
+than continue discovering jobs and create a backlog for later inference.
+Existing database records, drafts, and backups remain unchanged.
+
+The current local selection is:
+
+```yaml
+ollama:
+  required_for_engine: true
+  endpoint: http://100.93.206.16:11434
+  model: qwen3:14b-16k
+```
+
+This is private local configuration and is not committed to Git.
+
 ## Health check
 
 ```bash

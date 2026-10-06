@@ -5,21 +5,21 @@ SDA data root and must not be committed.
 
 ## Local layout
 
-The eventual runtime configuration should be stored below the configured
-`ENGINE_DATA_ROOT`, for example:
+The current host uses the repository-local `runtime/` directory because the
+root filesystem is `/dev/sda2`. It is ignored by Git and contains operational
+state, while the private YAML preferences remain under `config/local/`:
 
 ```text
-/mnt/sda/job-engine/
-├── config/
+/home/rbk/projects/AGENT/
+├── config/local/
 │   ├── profiles.yaml
 │   ├── schedule.yaml
 │   ├── sources.yaml
 │   ├── repositories.yaml
 │   └── policy.yaml
-├── data/
-├── artifacts/
-├── logs/
-└── backups/
+└── runtime/
+    ├── engine.sqlite3
+    └── backups/
 ```
 
 The example files under `config/examples/` are templates for that local
@@ -39,18 +39,20 @@ secrets.
 
 Required values will eventually include:
 
-- `ENGINE_DATA_ROOT`: the fixed UUID-backed SDA mount path.
+- `ENGINE_DATA_ROOT`: the SDA-backed runtime data root
+  (`/home/rbk/projects/AGENT/runtime` on this host).
 - `ENGINE_BIND_HOST`: the server's Tailscale address.
 - `ENGINE_BIND_PORT`: the local dashboard port.
 - `OLLAMA_BASE_URL`: the Tailscale endpoint on `rbkmsi`.
 
+The local policy requires the configured Ollama endpoint and model to be
+available before unattended engine work runs. This prevents discovery from
+outpacing model-assisted processing and creating an unbounded backlog.
+
 The GitHub token, mail credentials, and vault credentials are intentionally
 not configured in this stage.
 
-See [SDA_STORAGE.md](./SDA_STORAGE.md) for the host-level UUID and mount
-contract. The repository examples use `/mnt/sda/job-engine` as a placeholder;
-replace it only in local configuration after confirming the actual mount on
-`rbkasus`.
+See [SDA_STORAGE.md](./SDA_STORAGE.md) for the host-level storage contract.
 
 ## Configuration safety rules
 

@@ -30,6 +30,7 @@ schedule.local.yaml
 sources.local.yaml
 repositories.local.yaml
 policy.local.yaml
+config/local/
 resume*
 cover-letter*
 cover_letter*
