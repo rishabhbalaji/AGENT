@@ -150,6 +150,30 @@ def _validate_policy(document: dict[str, Any]) -> None:
         for key in ("data_root", "production_root"):
             if not isinstance(agent_corner.get(key), str) or not agent_corner[key].strip():
                 raise ConfigurationError(f"policy.yaml: agent_corner.{key} must be non-empty")
+    n8n = document.get("n8n")
+    if n8n is not None:
+        if not isinstance(n8n, dict):
+            raise ConfigurationError("policy.yaml: 'n8n' must be a mapping")
+        for key in (
+            "enabled",
+            "dashboard_only",
+            "owns_business_logic",
+            "owns_irreplaceable_state",
+            "owns_credentials",
+            "owns_outbound_actions",
+        ):
+            if not isinstance(n8n.get(key), bool):
+                raise ConfigurationError(f"policy.yaml: n8n.{key} must be boolean")
+        if n8n["enabled"] and not n8n["dashboard_only"]:
+            raise ConfigurationError("policy.yaml: n8n must remain dashboard-only")
+        for key in (
+            "owns_business_logic",
+            "owns_irreplaceable_state",
+            "owns_credentials",
+            "owns_outbound_actions",
+        ):
+            if n8n[key]:
+                raise ConfigurationError(f"policy.yaml: n8n.{key} must be false")
     deep_review = _require_mapping(document, "deep_review", "policy.yaml")
     clearance = _require_mapping(document, "clearance", "policy.yaml")
     applications = _require_mapping(document, "applications", "policy.yaml")

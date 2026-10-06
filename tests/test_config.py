@@ -14,6 +14,21 @@ class ConfigurationTests(unittest.TestCase):
         configuration = load_config(EXAMPLES)
         self.assertIn("full_time", configuration.profiles["profiles"])
         self.assertEqual(configuration.policy["discovery"]["suitable_jobs_target_per_day"], 15)
+        self.assertFalse(configuration.policy["n8n"]["enabled"])
+
+    def test_n8n_cannot_own_business_logic_or_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for source in EXAMPLES.glob("*.yaml"):
+                (Path(directory) / source.name).write_text(
+                    source.read_text(encoding="utf-8"), encoding="utf-8"
+                )
+            policy = Path(directory) / "policy.yaml"
+            content = policy.read_text(encoding="utf-8").replace(
+                "owns_business_logic: false", "owns_business_logic: true"
+            )
+            policy.write_text(content, encoding="utf-8")
+            with self.assertRaisesRegex(ConfigurationError, "owns_business_logic"):
+                load_config(Path(directory))
 
     def test_missing_file_fails(self):
         with tempfile.TemporaryDirectory() as directory:
