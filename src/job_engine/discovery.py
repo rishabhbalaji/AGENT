@@ -27,6 +27,7 @@ class DiscoveredJob:
     source_url: str
     description: str
     status: str
+    fit_score: int
     decision: MatchDecision
 
 
@@ -83,16 +84,17 @@ def _persist(
                     """
                     INSERT INTO jobs(
                         id, title, company, location, source, source_url,
-                        description, first_seen_at, last_seen_at, status
+                        description, first_seen_at, last_seen_at, status, fit_score
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET
                         title = excluded.title,
                         company = excluded.company,
                         location = excluded.location,
                         source_url = excluded.source_url,
                         description = excluded.description,
-                        last_seen_at = excluded.last_seen_at
+                        last_seen_at = excluded.last_seen_at,
+                        fit_score = excluded.fit_score
                     """,
                     (
                         job.stable_id,
@@ -105,6 +107,7 @@ def _persist(
                         timestamp,
                         timestamp,
                         job.status,
+                        job.fit_score,
                     ),
                 )
                 if job.status in {"drafted", "parked"}:
@@ -172,6 +175,7 @@ def discover(
                 source_url=record.source_url,
                 description=posting.description,
                 status=_status(decision),
+                fit_score=decision.score,
                 decision=decision,
             )
         )

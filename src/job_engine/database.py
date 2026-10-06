@@ -60,7 +60,43 @@ def _migration_1(connection: sqlite3.Connection) -> None:
     )
 
 
-MIGRATIONS: tuple[tuple[int, Migration], ...] = ((1, _migration_1),)
+def _migration_2(connection: sqlite3.Connection) -> None:
+    connection.executescript(
+        """
+        ALTER TABLE jobs ADD COLUMN fit_score INTEGER NOT NULL DEFAULT 0;
+
+        CREATE TABLE IF NOT EXISTS drafts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL REFERENCES jobs(id),
+            document_type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            evidence_ids_json TEXT NOT NULL,
+            model TEXT NOT NULL,
+            model_version TEXT NOT NULL,
+            gate_passed INTEGER NOT NULL CHECK (gate_passed IN (0, 1)),
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS repair_queue (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL REFERENCES jobs(id),
+            document_type TEXT NOT NULL,
+            gate TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_drafts_job_id ON drafts(job_id);
+        CREATE INDEX IF NOT EXISTS idx_repair_queue_job_id ON repair_queue(job_id);
+        """
+    )
+
+
+MIGRATIONS: tuple[tuple[int, Migration], ...] = (
+    (1, _migration_1),
+    (2, _migration_2),
+)
 
 
 def _ensure_migration_table(connection: sqlite3.Connection) -> None:
