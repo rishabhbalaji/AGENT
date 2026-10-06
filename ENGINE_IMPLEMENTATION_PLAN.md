@@ -14,8 +14,8 @@ This file is the implementation plan. `Reference Documents/Local Job Application
 - LinkedIn and Indeed are permanently unauthenticated discovery-only sources. The engine must never use cookies, login sessions, Easy Apply, messages, posts, connection requests, or other authenticated actions on either service.
 - The browser dashboard is the primary review interface. It is reachable through Tailscale, binds to the Tailscale interface rather than `0.0.0.0`, and is protected by authentication or an equivalent Tailscale access restriction.
 - The dashboard maintains queues for convenient daily review; desktop notifications are not required.
-- External ATS automation follows staged autonomy: manual approval during the pilot, then autonomous submission only for explicitly vetted companies and tested provider workflows. CAPTCHAs, MFA, unexpected pages, changed forms, ambiguous questions, and other safety challenges are always parked.
-- Greenhouse is the first live ATS pilot. Workday and other account-creation flows must pass local fixture and designated test-posting checks before any live automation.
+- External ATS automation follows tiered autonomy: manual approval during the pilot, then autonomous submission only for explicitly allowlisted company/provider pairs and tested provider workflows. CAPTCHAs, MFA outside an approved session, unexpected pages, changed forms, ambiguous questions, and other safety challenges are always parked.
+- Greenhouse and Lever are the first live ATS pilots for UK technology and graduate roles. Each company/provider pair requires its own allowlist entry, fixtures, recovery checks, and safety approval. Workday and other account-heavy flows remain parked until separately vetted.
 - The engine should discover and rank at least 15 suitable jobs per day when available. This is not a requirement to submit 15 applications, and submissions must never be forced when quality or safety checks fail.
 - Part-time discovery runs continuously from 20:00 to 08:00 UK time. The schedule remains configurable.
 - Remote roles must distinguish UK-remote, country-restricted remote, and worldwide remote, including right-to-work, tax, timezone, and location restrictions.
@@ -30,9 +30,12 @@ This file is the implementation plan. `Reference Documents/Local Job Application
 - Installed Ollama models are routed by workload: `qwen3:14b-16k` for routine triage and drafting, `qwen3-coder:30b-16k` for technical roles, and `qwen3-coder-64k:latest` for deep review.
 - Deep review has a dedicated `00:00-02:00` UK window and may run opportunistically when the actionable queue is practically empty.
 - Automatic document generation is capped at the best 15 suitable jobs per day. Other suitable jobs remain queued until capacity or explicit review.
+- Every selected job receives one tailored resume and one tailored cover letter, even when the provider does not request a cover letter. ATS-safe PDFs and editable source artifacts remain local, and unsubmitted letters are retained as preparation artifacts only.
 - Ollama availability is a prerequisite for discovery, triage, drafting, and application workers. When the exact configured endpoint or model is unavailable, those workers stop closed rather than creating a backlog. Backups, recovery checks, disk-space checks, and status reporting may continue.
 - n8n may later run self-hosted on the project machine for orchestration and dashboard-oriented workflows. The Python engine and SQLite remain authoritative; n8n must not own business logic or irreplaceable state.
-- A future local MCP layer may provide read-only, explicitly scoped context retrieval for model workflows. MCP must not write the database, bypass gates, or submit applications.
+- The current model-context implementation is an internal read-only provider, not an MCP protocol server. Do not add MCP transport until a concrete MCP-compatible client requires it. Any future transport must remain read-only and must not write the database, bypass gates, or submit applications.
+- The `career-ops` repository is reference-only. Do not add it as a dependency or copy code unless a later, focused review identifies a compatible component, confirms its license obligations, and documents the adaptation.
+- Source expansion is UK-first: GOV.UK Find a Job, Reed, Adzuna, compatible remote-job feeds, then Lever, Ashby, Workable, and other public ATS boards. LinkedIn and Indeed remain unauthenticated and manual.
 
 ## Version control
 
@@ -51,7 +54,7 @@ This file is the implementation plan. `Reference Documents/Local Job Application
 - No LinkedIn or Indeed login automation, LinkedIn Easy Apply automation, posts, connection requests, or outbound messages.
 - Employer and LinkedIn messages are drafts only.
 - External routes may be selected automatically, but every route still needs compatibility, legitimacy, and safety checks before action.
-- Account creation may eventually be automated through a local vault adapter. CAPTCHA, MFA, phone checks, identity checks, and other security challenges may be attempted only through ordinary supported flows; if they fail or require human input, the job is parked with its resume and cover letter ready.
+- Account creation may be automated only on explicitly allowlisted employer sites and only after user approval for each new site. Read-only Gmail may extract a one-time MFA code only for that approved active browser session. CAPTCHA, phone checks, identity checks, and unexpected security challenges always park the job with its resume and cover letter ready.
 - The engine must fail closed when Ollama, storage, configuration, or a browser workflow is unavailable.
 - All job-search profiles, schedules, locations, keywords, thresholds, repository links, and limits are editable configuration.
 - The creative Agent Corner is isolated from credentials, application actions, browser sessions, and production job data.
@@ -63,9 +66,9 @@ This file is the implementation plan. `Reference Documents/Local Job Application
 All times are UK local time and must be configurable:
 
 - `06:00-14:00`: full-time discovery, scoring, and preparation.
-- `14:00-20:00`: full-time discovery, scoring, preparation, and approved external-ATS applications.
+- `14:00-20:00`: full-time discovery, scoring, preparation, and approved or allowlisted external-ATS applications.
 - `20:00-08:00`: continuous part-time discovery, scoring, and preparation.
-- Outside an active application window: drafting, maintenance, status ingestion, and isolated Agent Corner work may continue, but no applications are submitted.
+- Outside the daytime application window: drafting, maintenance, status ingestion, backups, recovery checks, and isolated Agent Corner work may continue, but no external applications are submitted.
 - A configurable transition and maintenance window may pause or drain workers cleanly.
 
 Gaming pause/resume must stop inference, tailoring, and application workers while allowing lightweight discovery to continue or queue. An Ollama outage is stricter: discovery also stops so model work cannot accumulate an unbounded backlog.
@@ -304,10 +307,89 @@ Every stage must provide:
 
 **M5P1 — Status and isolation**
 
-- **M5P1S0 — Add dedicated Gmail ingestion** (`M5P1S0-add-dedicated-gmail-ingestion`): add read-only IMAP status ingestion for a dedicated application account; never send email.
+- **M5P1S0 — Add dedicated Gmail ingestion** (`M5P1S0-add-dedicated-gmail-ingestion`): add read-only Gmail API metadata ingestion for a dedicated application account; never send or mutate email.
 - **M5P1S1 — Isolate Agent Corner** (`M5P1S1-isolate-agent-corner`): separate data, process, credentials, browser sessions, job records, and outbound actions.
 - **M5P1S2 — Evaluate n8n** (`M5P1S2-evaluate-n8n`): add self-hosted n8n on `rbkasus` only if it reduces operational friction without owning business logic or irreplaceable state; begin with dashboard-only workflows.
 - **M5P1S3 — Add read-only MCP context layer** (`M5P1S3-add-read-only-mcp-context-layer`): expose narrowly scoped job, evidence, repository, and draft context to local model workflows without write access or safety-policy authority.
+
+#### Milestone 6 — Source expansion and document production
+
+**M6P0 — UK-first public sources**
+
+- **M6P0S0 — Add GOV.UK source** (`M6P0S0-add-govuk-source`): ingest public Find a Job records with rate limits, source health, provenance, and deterministic normalization.
+- **M6P0S1 — Add Reed and Adzuna sources** (`M6P0S1-add-reed-adzuna-sources`): add permitted public/API feeds with explicit credentials policy, quotas, retries, and no browser login.
+- **M6P0S2 — Add remote-feed sources** (`M6P0S2-add-remote-feed-sources`): support compatible public remote-job feeds and preserve country, timezone, and right-to-work restrictions.
+- **M6P0S3 — Add public ATS expansion** (`M6P0S3-add-lever-ashby-workable-sources`): add Lever, Ashby, Workable, and other public ATS boards behind the shared source contract.
+- **M6P0S4 — Harden source operations** (`M6P0S4-harden-source-rate-limits-and-deduplication`): verify rate limits, jitter, backoff, health reporting, repost detection, and cross-source deduplication at expanded-source scale.
+
+**M6P1 — Tailored application materials**
+
+- **M6P1S0 — Add canonical resume variants** (`M6P1S0-add-resume-variant-model`): maintain one evidence-backed master resume and role-family configuration without duplicating unsupported claims.
+- **M6P1S1 — Generate per-job resumes** (`M6P1S1-generate-per-job-resumes`): create one tailored, ATS-safe resume and editable source artifact for every selected job.
+- **M6P1S2 — Generate mandatory cover letters** (`M6P1S2-generate-mandatory-cover-letters`): create one evidence-backed tailored cover letter for every selected job, regardless of provider requirements.
+- **M6P1S3 — Generate ATS answers and networking drafts** (`M6P1S3-generate-ats-and-networking-drafts`): prepare deterministic, evidence-backed answers and manual-send message drafts without outbound communication.
+- **M6P1S4 — Expand document gates** (`M6P1S4-expand-document-gates`): enforce fact, provenance, formatting, and artifact-retention checks across all generated materials.
+
+#### Milestone 7 — Perennial operation and host reliability
+
+**M7P0 — Installable supervised operation**
+
+- **M7P0S0 — Install systemd units** (`M7P0S0-install-systemd-units`): provide an explicit install/enable procedure for discovery, backup, status ingestion, and future worker timers without committing host-specific secrets.
+- **M7P0S1 — Run supervised discovery** (`M7P0S1-run-supervised-discovery`): verify systemd supervision, lock ownership, bounded work, logs, pause state, and clean exit behavior on the real host.
+- **M7P0S2 — Add worker health and notifications** (`M7P0S2-add-worker-health-reporting`): expose dashboard/CLI health and failure state without requiring desktop notifications or external messaging.
+
+**M7P1 — Reliability drills**
+
+- **M7P1S0 — Test reboot backup and recovery** (`M7P1S0-test-reboot-backup-recovery`): run verified backups and read-only recovery checks before and after a host reboot.
+- **M7P1S1 — Test active-work pause** (`M7P1S1-test-active-work-pause`): prove pause requests stop new work and allow bounded in-flight work to drain safely.
+- **M7P1S2 — Test Ollama outage behavior** (`M7P1S2-test-ollama-outage-behavior`): verify model-dependent workers fail closed without a backlog while maintenance and recovery continue.
+- **M7P1S3 — Test Gmail consent and refresh** (`M7P1S3-test-gmail-consent-and-refresh`): exercise OAuth consent and token refresh without exposing client secrets or requesting write scopes.
+- **M7P1S4 — Verify ignored runtime state** (`M7P1S4-verify-ignored-runtime-state`): prove databases, tokens, browser state, generated documents, logs, and backups stay under intended ignored local paths.
+
+#### Milestone 8 — Controlled browser execution
+
+**M8P0 — Account and session safety**
+
+- **M8P0S0 — Add browser session isolation** (`M8P0S0-add-browser-session-isolation`): isolate per-provider browser state in Agent Corner or an equivalent restricted runtime.
+- **M8P0S1 — Add account-creation approval gate** (`M8P0S1-add-account-creation-approval-gate`): require explicit user approval before creating an account on each new allowlisted employer site.
+- **M8P0S2 — Add approved-session MFA correlation** (`M8P0S2-add-approved-session-mfa-correlation`): correlate one-time Gmail metadata/code extraction only with the approved active session; never send, delete, label, archive, or reply to mail.
+- **M8P0S3 — Park security challenges** (`M8P0S3-park-security-challenges`): capture resumable evidence and park CAPTCHA, phone, identity, changed-form, and ambiguous workflows.
+
+**M8P1 — Provider pilots**
+
+- **M8P1S0 — Fixture Greenhouse submission flows** (`M8P1S0-fixture-greenhouse-submission-flows`): validate forms, documents, answers, approvals, recovery, and audit records without live side effects.
+- **M8P1S1 — Fixture Lever submission flows** (`M8P1S1-fixture-lever-submission-flows`): add equivalent provider-specific fixtures and safety checks.
+- **M8P1S2 — Pilot allowlisted Greenhouse and Lever submissions** (`M8P1S2-pilot-allowlisted-greenhouse-lever-submissions`): begin with manual approval, then enable narrow daytime autonomous submission only after all gates pass.
+- **M8P1S3 — Preserve submission evidence** (`M8P1S3-preserve-submission-evidence`): record confirmation, timestamps, provider/company identity, artifact hashes, and parked failure reasons locally.
+
+#### Milestone 9 — Networking assistance
+
+**M9P0 — Safe contact discovery**
+
+- **M9P0S0 — Import public or user-provided contacts** (`M9P0S0-import-safe-networking-inputs`): accept public URLs or user-provided exports without LinkedIn login, scraping sessions, or authenticated automation.
+- **M9P0S1 — Rank potential connections** (`M9P0S1-rank-potential-connections`): score relevance using configurable role, company, location, and evidence criteria.
+- **M9P0S2 — Draft evidence-backed messages** (`M9P0S2-draft-networking-messages`): produce manual-send connection and referral drafts with no outbound action.
+
+#### Milestone 10 — Optional integration boundaries
+
+**M10P0 — MCP decision boundary**
+
+- **M10P0S0 — Document internal context boundary** (`M10P0S0-document-internal-context-boundary`): make clear that the current provider is not an MCP server and has no write or action authority.
+- **M10P0S1 — Reassess MCP transport need** (`M10P0S1-reassess-mcp-transport-need`): add a local stdio transport only if a named MCP-compatible client has a concrete read-only use case.
+
+**M10P1 — Reference-only upstream review**
+
+- **M10P1S0 — Maintain career-ops comparison** (`M10P1S0-maintain-career-ops-comparison`): document useful architectural comparisons without adding upstream dependencies or unverified code.
+- **M10P1S1 — Review reuse only when justified** (`M10P1S1-review-justified-upstream-reuse`): if a gap warrants reuse, inspect the exact commit, license, tests, and adaptation boundary before copying any compatible component.
+
+#### Milestone 11 — Production readiness and autonomy audit
+
+**M11P0 — End-to-end safety certification**
+
+- **M11P0S0 — Run unattended discovery rehearsal** (`M11P0S0-run-unattended-discovery-rehearsal`): run the complete supervised discovery, triage, drafting, status, backup, and recovery loop.
+- **M11P0S1 — Audit kill switches and gates** (`M11P0S1-audit-kill-switches-and-gates`): verify pause, shutdown, allowlist, daytime, Ollama, document, account, MFA, and provider gates.
+- **M11P0S2 — Audit logs and rollback** (`M11P0S2-audit-logs-and-rollback`): verify reproducible evidence, artifact retention, rollback procedures, and no secret leakage.
+- **M11P0S3 — Certify tiered autonomy** (`M11P0S3-certify-tiered-autonomy`): publish a final matrix of unattended, approval-required, and always-parked behaviors.
 
 The detailed implementation guidance and exit criteria for these stages are defined below. A stage may be split into additional numbered stages later, but existing stage identifiers must not be silently renumbered after they have been handed off.
 
@@ -385,37 +467,79 @@ Exit criteria: deterministic test postings produce valid structured results and 
 1. Add queues for discovered, shortlisted, apply-yourself, drafted, parked, applied, rejected, interview, and archived states.
 2. Add approve, reject, park, edit, export, and mark-applied actions.
 3. Add a daily-review view with generated PDFs, draft messages, status changes, and clear shortfall reporting.
-4. Add read-only IMAP ingestion later through a dedicated application Gmail account, with no email sending. Existing personal Gmail is out of scope for the initial integration.
+4. Add read-only Gmail API metadata ingestion through the dedicated application account, with no email sending or mailbox mutation. Existing personal Gmail is out of scope.
 
 Exit criteria: the complete daily review can be performed locally through the Tailscale-only dashboard without opening a cloud dashboard.
 
 ### Phase 6: External ATS pilot
 
 1. Build fixture-based tests for supported ATS forms before using live postings.
-2. Begin with Greenhouse and manual approval for every submission; route selection remains policy-driven rather than hard-coded to a single provider.
+2. Begin with Greenhouse and Lever and require manual approval for every submission; route selection remains policy-driven rather than hard-coded to a single provider.
 3. Require a complete posting, validated documents, known form fields, policy approval, and an approved company/provider allowlist entry before submission.
-4. Add autonomous submission only after the provider-specific fixture, recovery, and safety checklist passes.
-5. Park Workday and all other account-creation flows until they pass local fixtures and designated test-posting checks.
-6. Use the future Vaultwarden adapter for credentials; never write passwords into the repository or job records.
-7. Screenshot and park every unexpected page, failed security challenge, missing answer, or validation error while preserving a resumable workflow.
-8. Record confirmation and evidence locally.
+4. Add account creation only for explicitly allowlisted sites and only after per-site user approval; use the future Vaultwarden adapter for credentials.
+5. Permit read-only Gmail MFA extraction only for an approved active session. Park CAPTCHA, phone, identity, changed-form, and unexpected security challenges.
+6. Add autonomous submission only after provider-specific fixture, recovery, daytime-window, allowlist, and safety checks pass.
+7. Park Workday and all other unvetted account-heavy flows until they pass local fixtures and designated test-posting checks.
+8. Never write passwords, tokens, or email content into the repository or job records; preserve only minimum metadata and confirmation evidence locally.
 
 Exit criteria: the pilot can be paused instantly, submits only approved external forms, and has a tested recovery path.
 
 ### Phase 7: Operations and Agent Corner
 
-1. Add systemd units and timers for each worker class.
-2. Add health checks, pause/resume, retention, local backups on SDA, and recovery instructions.
-3. Add the Agent Corner as a separate process, data directory, and tool policy with no production credentials or action APIs.
-4. Add n8n only if it reduces operational friction after the core is stable.
+1. Install and enable systemd units and timers for discovery, backups, status ingestion, and later worker classes through a documented host-local procedure.
+2. Run supervised discovery on the real host and verify clean locks, bounded work, logs, pause/resume, and service restart behavior.
+3. Test reboot backup/recovery, active-work pause, Ollama outage fail-closed behavior, Gmail consent/token refresh, and ignored runtime locations.
+4. Add the Agent Corner as a separate process, data directory, and tool policy with no production credentials or action APIs.
+5. Add n8n only if it reduces operational friction after the core is stable.
 
-Exit criteria: gaming pause, reboot recovery, Ollama outage, and Agent Corner isolation are tested.
+Exit criteria: reboot recovery, active-work pause, Ollama outage, Gmail OAuth, ignored-path, and Agent Corner isolation checks are tested.
+
+### Phase 8: Source expansion and document production
+
+1. Add UK-first source adapters in this order: GOV.UK Find a Job, Reed, Adzuna, compatible remote feeds, then Lever, Ashby, Workable, and other public ATS boards.
+2. Preserve source health, rate limits, retries, provenance, deduplication, repost detection, and the existing LinkedIn/Indeed manual boundary.
+3. Maintain one evidence-backed canonical resume and generate one tailored ATS-safe resume plus editable source per selected job.
+4. Generate one evidence-backed tailored cover letter per selected job even when the provider does not request one.
+5. Generate ATS answers and networking drafts locally; never send messages or submit documents from the drafting worker.
+
+Exit criteria: expanded public discovery is stable and every selected job has traceable resume and cover-letter artifacts that pass document gates.
+
+### Phase 9: Controlled account and submission execution
+
+1. Isolate browser sessions and credentials by provider and employer site.
+2. Require explicit user approval before creating an account on each new allowlisted site.
+3. Correlate read-only Gmail one-time codes only with an approved active session; never modify mailbox state.
+4. Fixture-test Greenhouse and Lever independently, then run a manual-approval pilot before enabling narrow daytime autonomous submission.
+5. Park every CAPTCHA, phone check, identity check, changed form, unexpected page, ambiguous answer, or unsupported provider.
+6. Preserve confirmation and failure evidence locally without storing secrets.
+
+Exit criteria: only allowlisted Greenhouse/Lever company flows can submit, only during the daytime Europe/London window, and every unsafe or ambiguous route parks safely.
+
+### Phase 10: Networking and integration boundaries
+
+1. Accept public or user-provided networking inputs without LinkedIn login, scraping sessions, connection requests, or outbound messages.
+2. Rank potential contacts and produce evidence-backed manual-send drafts.
+3. Keep the current read-only context provider internal; do not claim that a real MCP server is installed.
+4. Revisit MCP transport only for a named client use case, and keep any future transport read-only.
+5. Keep `career-ops` reference-only unless a focused, license-aware review justifies reuse of a specific component.
+
+Exit criteria: networking assistance creates drafts only, and integration boundaries cannot bypass application or credential gates.
+
+### Phase 11: Production readiness and autonomy audit
+
+1. Run an end-to-end unattended rehearsal covering discovery, triage, document generation, Gmail status ingestion, backups, recovery, and pause/resume.
+2. Audit all kill switches, allowlists, daytime restrictions, Ollama gates, document gates, account approval, MFA correlation, and provider safety checks.
+3. Verify logs, artifact hashes, rollback procedures, ignored paths, and absence of secret leakage.
+4. Publish a tiered autonomy matrix identifying unattended, approval-required, and always-parked behaviors.
+
+Exit criteria: the engine has a repeatable local certification result and no path from model context or browser automation to an unapproved external side effect.
 
 ## Initial test cases
 
 - Empty and invalid configuration.
 - Schedule boundaries for full-time `06:00-20:00`, part-time `20:00-08:00`, pause, and configurable maintenance windows.
 - Duplicate postings from multiple sources.
+- UK-first source health, rate limiting, retries, and cross-source deduplication.
 - Remote-location and right-to-work classification.
 - SC Clearance wording variants and hard exclusion.
 - Company exclusion names, aliases, domains, and reasons.
@@ -424,17 +548,23 @@ Exit criteria: gaming pause, reboot recovery, Ollama outage, and Agent Corner is
 - Unsupported resume claim requested by a job.
 - Posting requiring login, CAPTCHA, Workday account creation, or an unknown form.
 - Unexpected ATS field or changed page structure.
+- One tailored resume and one tailored cover letter for every selected job, including jobs whose provider does not request a letter.
 - Pause during a running worker and resume after reboot.
+- Systemd installation, supervised discovery, backup/recovery after reboot, and ignored runtime-path verification.
+- Gmail OAuth consent and token refresh without broader scopes or mailbox mutation.
+- Account-creation approval for each new allowlisted site and approved-session-only MFA correlation.
+- Greenhouse and Lever fixture validation, daytime submission windows, and company/provider allowlist enforcement.
+- Networking inputs from public or user-provided data without LinkedIn authentication or outbound messaging.
 - SDA unavailable or read-only.
 - Agent Corner attempting to access a credential, job record, browser, or outbound action.
 - Git status and history excluding all runtime data, personal data, and secrets.
 - Reproducibility of a generated artifact from its source revision and stored local evidence.
 - Fifteen-job discovery shortfall when fewer than fifteen legitimate jobs pass validation.
 - Staged-autonomy approval, allowlist, and provider safety gates.
-- Account creation through a Vaultwarden adapter with no secret leakage.
+- Account creation through an approved-site Vaultwarden adapter with no secret leakage.
 - Dashboard access through the Tailscale interface without public binding.
 - SDA UUID mount verification and refusal to use `/dev/sdb`.
 
 ## Immediate next action
 
-Do not install the full stack yet. First initialize Git and create the Phase 0/1 scaffold. The first executable milestone is a dry-run CLI that loads editable example configuration, resolves the current operating mode, validates the UUID-backed SDA data root, and writes one health/event record under that root. The first browser milestone is a Tailscale-only FastAPI review dashboard. In parallel, pin and inspect the upstream career-ops commit before reusing any implementation or template. Real SDA paths, resume assets, tracker data, repositories, vault data, and credentials can be added later.
+Start `M5P1S4-expand-autonomy-roadmap` from the verified `main` branch as a documentation-only handoff. After it is reviewed and merged, begin `M6P0S0-add-govuk-source`; do not install systemd services or enable external submission until the corresponding M7 and M8 stages are implemented and their host-level checks pass. Keep `career-ops` reference-only and keep the current internal context provider separate from MCP transport.
