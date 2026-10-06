@@ -32,6 +32,7 @@ from .gmail_ingestion import (
     persist_status_messages,
 )
 from .agent_corner import AgentCornerIsolationError, AgentCornerPaths, prepare_paths
+from .context import ContextAccessError, ReadOnlyContext
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -163,6 +164,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     corner.add_argument("--root", type=Path, required=True)
     corner.add_argument("--production-root", type=Path, required=True)
+    context = subparsers.add_parser(
+        "context",
+        help="read an allowlisted context resource without mutation access",
+    )
+    context.add_argument("--database", type=Path, required=True)
+    context.add_argument(
+        "--resource",
+        choices=("jobs", "drafts", "email_status", "resume_evidence", "repository_evidence"),
+        required=True,
+    )
+    context.add_argument("--id", dest="identifier")
+    context.add_argument("--limit", type=int, default=20)
     return parser
 
 
@@ -417,6 +430,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                 sort_keys=True,
             )
         )
+    elif args.command == "context":
+        try:
+            result = ReadOnlyContext(args.database).read(
+                args.resource,
+                identifier=args.identifier,
+                limit=args.limit,
+            )
+        except ContextAccessError as exc:
+            print(f"context read failed: {exc}", file=sys.stderr)
+            return 1
+        print(json.dumps(result, indent=2, sort_keys=True))
     return 0
 
 
