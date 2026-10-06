@@ -39,3 +39,12 @@ job-engine backup \
   --backup-root /path/to/backups \
   --keep 14
 ```
+
+Run the non-destructive recovery check before enabling unattended operation:
+
+```bash
+job-engine recovery-check \
+  --database /path/to/engine.sqlite3 \
+  --backup-root /path/to/backups \
+  --pause-file /path/to/PAUSED
+```

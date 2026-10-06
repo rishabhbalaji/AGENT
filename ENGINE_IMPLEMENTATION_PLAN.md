@@ -274,6 +274,7 @@ Every stage must provide:
 - **M5P0S0 — Add supervised discovery worker** (`M5P0S0-add-supervised-discovery-worker`): provide a bounded, lock-protected, pause-aware public discovery pass and systemd timer templates. Later worker classes will be added as separate stages.
 - **M5P0S1 — Add pause and resume controls** (`M5P0S1-add-pause-resume-controls`): expose explicit CLI pause, resume, and status controls for supervised workers.
 - **M5P0S2 — Add retention and local backups** (`M5P0S2-add-retention-and-backups`): create verified SQLite backups with conservative, explicit pruning that never removes application evidence.
+- **M5P0S3 — Add recovery checks** (`M5P0S3-add-recovery-checks`): provide read-only checks for database integrity, backup readability, and worker pause state.
 - **M5P0S1 — Add pause and resume** (`M5P0S1-add-pause-and-resume`): stop inference, tailoring, and applications during gaming while allowing lightweight discovery to queue.
 - **M5P0S2 — Add retention and local backups** (`M5P0S2-add-retention-and-backups`): retain application evidence indefinitely, raw snapshots for approximately 12 months, and prune redundant caches.
 - **M5P0S3 — Add recovery checks** (`M5P0S3-add-recovery-checks`): test reboot recovery, Ollama outages, read-only SDA, and resumable workflows.

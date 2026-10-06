@@ -22,6 +22,7 @@ from .discovery import discover
 from .greenhouse import GreenhouseAdapter
 from .worker import clear_pause, pause_status, run_discovery_worker, set_pause
 from .backups import backup_database, prune_backups
+from .recovery import run_recovery_checks
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -129,6 +130,13 @@ def build_parser() -> argparse.ArgumentParser:
     backup.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
     backup.add_argument("--backup-root", type=Path, required=True)
     backup.add_argument("--keep", type=int, default=0)
+    recovery = subparsers.add_parser(
+        "recovery-check",
+        help="run read-only database, backup, and worker recovery checks",
+    )
+    recovery.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
+    recovery.add_argument("--backup-root", type=Path, default=Path("backups"))
+    recovery.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
     return parser
 
 
@@ -327,6 +335,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         except (DatabaseError, OSError, ValueError) as exc:
             print(f"backup failed: {exc}", file=sys.stderr)
+            return 1
+    elif args.command == "recovery-check":
+        checks = run_recovery_checks(args.database, args.backup_root, args.pause_file)
+        print(
+            json.dumps(
+                [
+                    {"name": check.name, "status": check.status, "detail": check.detail}
+                    for check in checks
+                ],
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        if any(check.status == "failed" for check in checks):
             return 1
     return 0
 
