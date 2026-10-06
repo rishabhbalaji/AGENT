@@ -28,3 +28,14 @@ job-engine resume --pause-file /path/to/PAUSED
 ```
 
 This stage does not yet enable model drafting or external ATS actions.
+
+The backup timer uses the same local control boundary and keeps the newest
+fourteen verified database backups. Application evidence is not pruned by this
+stage. A manual backup can be created with:
+
+```bash
+job-engine backup \
+  --database /path/to/engine.sqlite3 \
+  --backup-root /path/to/backups \
+  --keep 14
+```

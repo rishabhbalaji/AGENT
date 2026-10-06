@@ -1,0 +1,12 @@
+[Unit]
+Description=Job Engine verified SQLite backup
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/AGENT
+ExecStart=%h/projects/AGENT/.venv/bin/job-engine backup --database %h/projects/AGENT/engine.sqlite3 --backup-root %h/projects/AGENT/backups --keep 14
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/projects/AGENT

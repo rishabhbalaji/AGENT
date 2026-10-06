@@ -21,6 +21,7 @@ from .fixtures import FixtureError, seed_fixture_database
 from .discovery import discover
 from .greenhouse import GreenhouseAdapter
 from .worker import clear_pause, pause_status, run_discovery_worker, set_pause
+from .backups import backup_database, prune_backups
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -121,6 +122,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="show whether supervised workers are paused",
     )
     worker_status.add_argument("--pause-file", type=Path, default=Path("PAUSED"))
+    backup = subparsers.add_parser(
+        "backup",
+        help="create and verify a local SQLite backup",
+    )
+    backup.add_argument("--database", type=Path, default=Path("engine.sqlite3"))
+    backup.add_argument("--backup-root", type=Path, required=True)
+    backup.add_argument("--keep", type=int, default=0)
     return parser
 
 
@@ -303,6 +311,23 @@ def main(argv: Sequence[str] | None = None) -> int:
                 }
             )
         )
+    elif args.command == "backup":
+        try:
+            destination = backup_database(args.database, args.backup_root)
+            removed = prune_backups(args.backup_root, keep=args.keep) if args.keep else ()
+            print(
+                json.dumps(
+                    {
+                        "backup": str(destination),
+                        "integrity": "ok",
+                        "removed": [str(path) for path in removed],
+                    },
+                    sort_keys=True,
+                )
+            )
+        except (DatabaseError, OSError, ValueError) as exc:
+            print(f"backup failed: {exc}", file=sys.stderr)
+            return 1
     return 0
 
 
