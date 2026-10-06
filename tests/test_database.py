@@ -10,8 +10,8 @@ class DatabaseTests(unittest.TestCase):
     def test_migrate_creates_schema_and_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
             database = Path(directory) / "data" / "engine.sqlite"
-            self.assertEqual(migrate(database), 2)
-            self.assertEqual(migrate(database), 2)
+            self.assertEqual(migrate(database), 3)
+            self.assertEqual(migrate(database), 3)
             with sqlite3.connect(database) as connection:
                 tables = {
                     row[0]
@@ -22,8 +22,8 @@ class DatabaseTests(unittest.TestCase):
                 versions = list(
                     connection.execute("SELECT version FROM schema_migrations")
                 )
-        self.assertTrue({"jobs", "applications", "events"}.issubset(tables))
-        self.assertEqual(versions, [(1,), (2,)])
+        self.assertTrue({"jobs", "applications", "events", "email_status_messages"}.issubset(tables))
+        self.assertEqual(versions, [(1,), (2,), (3,)])
 
     def test_record_event_returns_id_and_persists_payload(self):
         with tempfile.TemporaryDirectory() as directory:

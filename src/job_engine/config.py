@@ -128,6 +128,19 @@ def _validate_policy(document: dict[str, Any]) -> None:
     storage = _require_mapping(document, "storage", "policy.yaml")
     discovery = _require_mapping(document, "discovery", "policy.yaml")
     ollama = _require_mapping(document, "ollama", "policy.yaml")
+    gmail = document.get("gmail")
+    if gmail is not None:
+        if not isinstance(gmail, dict):
+            raise ConfigurationError("policy.yaml: 'gmail' must be a mapping")
+        if not isinstance(gmail.get("enabled"), bool):
+            raise ConfigurationError("policy.yaml: gmail.enabled must be boolean")
+        if not isinstance(gmail.get("lookback_hours"), (int, float)) or gmail["lookback_hours"] <= 0:
+            raise ConfigurationError("policy.yaml: gmail.lookback_hours must be positive")
+        if not isinstance(gmail.get("max_messages"), int) or gmail["max_messages"] < 1:
+            raise ConfigurationError("policy.yaml: gmail.max_messages must be positive")
+        for key in ("query", "client_secret_path", "token_path"):
+            if not isinstance(gmail.get(key), str) or not gmail[key].strip():
+                raise ConfigurationError(f"policy.yaml: gmail.{key} must be non-empty")
     deep_review = _require_mapping(document, "deep_review", "policy.yaml")
     clearance = _require_mapping(document, "clearance", "policy.yaml")
     applications = _require_mapping(document, "applications", "policy.yaml")

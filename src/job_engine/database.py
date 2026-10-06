@@ -93,9 +93,29 @@ def _migration_2(connection: sqlite3.Connection) -> None:
     )
 
 
+def _migration_3(connection: sqlite3.Connection) -> None:
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS email_status_messages (
+            message_id TEXT PRIMARY KEY,
+            thread_id TEXT NOT NULL,
+            received_at TEXT NOT NULL,
+            sender TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            category TEXT NOT NULL,
+            payload_json TEXT NOT NULL DEFAULT '{}',
+            ingested_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_email_status_received_at
+            ON email_status_messages(received_at);
+        """
+    )
+
+
 MIGRATIONS: tuple[tuple[int, Migration], ...] = (
     (1, _migration_1),
     (2, _migration_2),
+    (3, _migration_3),
 )
 
 
