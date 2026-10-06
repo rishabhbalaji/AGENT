@@ -9,6 +9,11 @@ discovery:
   suitable_jobs_target_per_day: 15
   submissions_are_not_a_quota: true
 
+ollama:
+  required_for_engine: true
+  endpoint: http://127.0.0.1:11434
+  model: qwen3:14b-16k
+
 clearance:
   exclude_required_or_requested:
     - SC

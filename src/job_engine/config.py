@@ -127,6 +127,7 @@ def _validate_repositories(document: dict[str, Any]) -> None:
 def _validate_policy(document: dict[str, Any]) -> None:
     storage = _require_mapping(document, "storage", "policy.yaml")
     discovery = _require_mapping(document, "discovery", "policy.yaml")
+    ollama = _require_mapping(document, "ollama", "policy.yaml")
     clearance = _require_mapping(document, "clearance", "policy.yaml")
     applications = _require_mapping(document, "applications", "policy.yaml")
     _require_mapping(document, "retention", "policy.yaml")
@@ -135,6 +136,12 @@ def _validate_policy(document: dict[str, Any]) -> None:
         raise ConfigurationError("policy.yaml: SDA storage must be required")
     if discovery.get("suitable_jobs_target_per_day") != 15:
         raise ConfigurationError("policy.yaml: suitable jobs target must be 15")
+    if ollama.get("required_for_engine") is not True:
+        raise ConfigurationError("policy.yaml: Ollama must be required for the engine")
+    if not isinstance(ollama.get("endpoint"), str) or not ollama["endpoint"].strip():
+        raise ConfigurationError("policy.yaml: Ollama endpoint must be non-empty")
+    if not isinstance(ollama.get("model"), str) or not ollama["model"].strip():
+        raise ConfigurationError("policy.yaml: Ollama model must be non-empty")
     if not _require_list(clearance, "exclude_required_or_requested", "policy.yaml"):
         raise ConfigurationError("policy.yaml: clearance exclusions cannot be empty")
     for exclusion in company_exclusions:

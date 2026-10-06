@@ -10,6 +10,12 @@ Each invocation:
 - persists discovery results but never submits an application;
 - returns a compact JSON summary suitable for service logs.
 
+Before fetching a source, the worker checks the exact Ollama endpoint and model
+configured in `policy.yaml`. If Ollama is unavailable or the configured model
+is missing, the worker exits closed and does not create a discovery backlog.
+Backups, recovery checks, and status controls remain available during an
+Ollama outage.
+
 Install the unit files from `systemd/` into the user systemd directory, adjust
 the working directory, virtual-environment path, and board arguments, then
 enable the timer:

@@ -280,7 +280,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             if result.status != "completed":
                 print(json.dumps({"status": result.status}, sort_keys=True))
-                return 0
+                return 1 if result.status == "ollama_unavailable" else 0
             report = result.value
             print(
                 json.dumps(
@@ -293,7 +293,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     sort_keys=True,
                 )
             )
-        except (ConfigurationError, DatabaseError, ValueError, OSError) as exc:
+        except (ConfigurationError, DatabaseError, OllamaError, ValueError, OSError) as exc:
             print(f"discovery worker failed: {exc}", file=sys.stderr)
             return 1
     elif args.command == "pause":
