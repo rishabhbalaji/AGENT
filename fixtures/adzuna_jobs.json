@@ -1,0 +1,22 @@
+{
+  "count": 1,
+  "results": [
+    {
+      "id": "adzuna-fixture-001",
+      "title": "Junior Python Engineer",
+      "company": {
+        "display_name": "Example Cloud"
+      },
+      "redirect_url": "https://example.invalid/adzuna/adzuna-fixture-001",
+      "description": "Build Python services with a supportive engineering team.",
+      "location": {
+        "display_name": "Manchester"
+      },
+      "contract_type": "permanent",
+      "created": "2026-01-22T09:00:00Z",
+      "category": {
+        "label": "IT Jobs"
+      }
+    }
+  ]
+}

@@ -26,7 +26,13 @@ adapter. Its endpoint is explicitly injected because the engine must not guess
 at an undocumented or changing endpoint. It accepts a normalized JSON feed
 shape, preserves the source URL, and uses the same explicit health behavior.
 Reed and Adzuna remain configuration- and credential-gated until their API
-credentials and terms are deliberately enabled.
+credentials and terms are deliberately enabled. `ReedAdapter` uses an API key
+for HTTP Basic authentication and `AdzunaAdapter` uses an app ID and app key
+as required by its API. The example configuration names environment variables
+only; no credentials belong in YAML, source control, job records, or logs.
+Without the required credentials, both adapters return `DISABLED` and make no
+network request. Their fixture tests use `fixtures/reed_jobs.json` and
+`fixtures/adzuna_jobs.json` and do not contact either service.
 
 `job_engine.aggregator.GuestAggregatorAdapter` is disabled by default. To
 enable a guest feed, an operator must explicitly provide its host in an
